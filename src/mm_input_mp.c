@@ -8180,6 +8180,23 @@ ECHO("\n----Acoustic Properties\n", echo_file);
 	   SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightU_function_constants);
 	 }
 
+      else if(model_read == -1 && !strcmp(model_name, "GRAD_FLAT_GRAD"))  
+	{
+	  model_read = 1;
+	  mat_ptr->HeightUFunctionModel = GRAD_FLAT_GRAD;
+	  num_const = read_constants(imp, &(mat_ptr->u_heightU_function_constants), NO_SPECIES);
+	  if( num_const < 8)
+	    {
+	      sr = sprintf(err_msg, 
+			   "Matl %s needs 8 constants for %s %s model.\n",
+			   pd_glob[mn]->MaterialName,
+			   "Upper Height Function", "GRAD_FLAT_GRAD");
+	      EH(-1, err_msg);
+	    }
+	  mat_ptr->len_u_heightU_function_constants = num_const;
+	  SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightU_function_constants);
+	}
+
        else if ( model_read == -1 && !strcmp(model_name, "CIRCLE_MELT") )
 	 {
 	   model_read = 1;

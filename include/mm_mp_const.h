@@ -452,6 +452,7 @@ extern int Num_Var_Init_Mat[MAX_NUMBER_MATLS];	/* number of variables to overwri
 #define FLAT_GRAD_FLAT_MELT 10142
 #define CIRCLE_MELT 10143
 #define LOWER_DISTANCE 10144
+#define GRAD_FLAT_GRAD 10145
 
 /* Lubrication contact angle models */
 #define DYNAMIC_CA        10201
