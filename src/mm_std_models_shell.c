@@ -324,37 +324,36 @@ height_function_model (double *H_U,
        dbl x2 = mp->u_heightU_function_constants[1];
        dbl h0 = mp->u_heightU_function_constants[2];
        dbl h1 = mp->u_heightU_function_constants[3];
-       dbl w1 = mp->u_heightU_function_constants[4];
-       dbl w2 = mp->u_heightU_function_constants[5];
-       dbl sr = mp->u_heightU_function_constants[6];
-       dbl WL = mp->u_heightU_function_constants[7];
+       dbl hmax = mp->u_heightU_function_constants[4];
+       dbl w1 = mp->u_heightU_function_constants[5];
+       dbl w2 = mp->u_heightU_function_constants[6];
+       dbl sr = mp->u_heightU_function_constants[7];
+       dbl WL = mp->u_heightU_function_constants[8];
        dbl x = fv->x[0];
        //Set slope and intercept for grad sections
-       dbl a1 = (h1-h0)/(w1*w1);
-       dbl b1 = -2*a1*(x1+w1);
-       dbl c1 = h0 + a1*(x1+w1)*(x1+w1);
-       dbl a2 = (h1-h0)/(w2*w2);
-       dbl b2 = -2*a2*(x2-w2);
-       dbl c2 = h0 + a2*(x2-w2)*(x2-w2);
+       dbl a2 = (h1-h0)/(x2-w2-x1-w1);
+       dbl b2 = h1 - a2*(x2-w2);
+       dbl a1 = (hmax-h0+a2*w1) / (w1*w1);
+       dbl b1 = a2 - 2.0*a1*(x1+w1);
+       dbl c1 = h0 - a2*(x1+w1) + a1*(x1+w1)*(x1+w1);
+       dbl a3 = (hmax-h1-a2*w2) / (w2*w2);
+       dbl b3 = a2 - 2.0*a3*(x2-w2);
+       dbl c3 = h1 - a2*(x2-w2) + a3*(x2-w2)*(x2-w2);
 
        if(x <= x1+w1)
 	 {	   
-	   //*H_U = a1*x*x+b1*x+c1 + sr*sin(2*PI*x/WL);
-	   *H_U = a1*x+ c1;
-	   //dH_U_dX[0] = 2*a1*x+b1 + sr*2*PI/WL*cos(2*PI*x/WL);
-	   dH_U_dX[0] = a1;
+	   *H_U = a1*x*x+b1*x+c1 + sr*sin(2*PI*x/WL);
+	   dH_U_dX[0] = 2*a1*x+b1 + sr*2*PI/WL*cos(2*PI*x/WL);
 	 }
        else if(x >= x2-w2)
 	 {
-	   //*H_U = a2*x*x+b2*x+c2 + sr*sin(2*PI*x/WL);
-	   *H_U = a2*x+ c2;
-	   //dH_U_dX[0] = 2*a2*x+b2 + sr*2*PI/WL*cos(2*PI*x/WL);
-	   dH_U_dX[0] = a2;
+	   *H_U = a3*x*x+b3*x+c3 + sr*sin(2*PI*x/WL);
+	   dH_U_dX[0] = 2*a3*x+b3 + sr*2*PI/WL*cos(2*PI*x/WL);
 	 }
        else
 	 {	   
-	   *H_U = h0 + sr*sin(2*PI*x/WL);
-	   dH_U_dX[0] = sr*2*PI/WL*cos(2*PI*x/WL);
+	   *H_U = a2*x+b2 + sr*sin(2*PI*x/WL);
+	   dH_U_dX[0] = a2 + sr*2*PI/WL*cos(2*PI*x/WL);
 	 }
 
        dH_U_dX[1]  = 0.0;
