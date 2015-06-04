@@ -331,6 +331,8 @@ height_function_model (double *H_U,
        dbl WL = mp->u_heightU_function_constants[8];
 
        dbl x = fv->x[0];
+       //Use undeformed coordinates
+       dbl x0 = fv->x0[0];
 
        //Set polynomial coefficients
        dbl a2 = 0.0;
@@ -360,29 +362,29 @@ height_function_model (double *H_U,
        dbl c3 = h1 - a2*(x2-w2) + a3*(x2-w2)*(x2-w2);
        
        // Left parabola
-       if(x <= x1+w1)
+       if(x0 <= x1+w1)
 	 {	   
-	   *H_U = a1*x*x + b1*x + c1;
-	   dH_U_dX[0] = 2*a1*x + b1;   
+	   *H_U = a1*x0*x0 + b1*x0 + c1;
+	   dH_U_dX[0] = 2*a1*x0 + b1;   
 	 }
        // Right parabola
-       else if(x >= x2-w2)
+       else if(x0 >= x2-w2)
 	 {
-	   *H_U = a3*x*x + b3*x + c3;
-	   dH_U_dX[0] = 2*a3*x + b3;
+	   *H_U = a3*x0*x0 + b3*x0 + c3;
+	   dH_U_dX[0] = 2*a3*x0 + b3;
 	 }
        // Middle line
        else
 	 {	   
-	   *H_U = a2*x + b2;
+	   *H_U = a2*x0 + b2;
 	   dH_U_dX[0] = a2;
 	 }
        
        // Check for surface roughness
        if(WL)
 	 {
-	   *H_U += sr*sin(2*PI*x/WL);
-	   dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x/WL);
+	   *H_U += sr*sin(2*PI*x0/WL);
+	   dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x0/WL);
 	 }
 
        dH_U_dX[1]  = 0.0;
