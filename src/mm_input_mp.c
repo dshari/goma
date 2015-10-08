@@ -1423,7 +1423,11 @@ rd_mp_specs(FILE *imp, char input[], int mn, char *echo_file)
   else if ( !strcmp(model_name, "THERMAL") )
     {
       ConstitutiveEquation = THERMAL;
-    } 
+    }
+  else if ( !strcmp(model_name, "BARUS") )
+    {
+      ConstitutiveEquation = BARUS;
+    }  
   else if ( !strcmp(model_name, "CURE") )
     {
       ConstitutiveEquation = CURE;
@@ -1594,6 +1598,7 @@ rd_mp_specs(FILE *imp, char input[], int mn, char *echo_file)
       ConstitutiveEquation == SYLGARD ||
       ConstitutiveEquation == FILLED_EPOXY ||
       ConstitutiveEquation == THERMAL ||
+      ConstitutiveEquation == BARUS ||
       ConstitutiveEquation == CURE ||
       ConstitutiveEquation == HERSCHEL_BULKLEY ||
       ConstitutiveEquation == CARREAU_WLF_CONC_PL ||
@@ -1812,6 +1817,7 @@ rd_mp_specs(FILE *imp, char input[], int mn, char *echo_file)
      ConstitutiveEquation == CARREAU_WLF_CONC_PL ||
      ConstitutiveEquation == CARREAU_WLF_CONC_EXP ||
      ConstitutiveEquation == THERMAL||
+     ConstitutiveEquation == BARUS ||
      ConstitutiveEquation == FOAM_EPOXY)
     {
       model_read = look_for_mat_prop(imp, "Thermal Exponent", 

@@ -230,6 +230,8 @@ extern int Num_Var_Init_Mat[MAX_NUMBER_MATLS];	/* number of variables to overwri
 #define SYLGARD    28         /* Sylgard viscosity model */
 #define PRANDTL_MIXING 29     /* Shell Turbulent Viscosity Model */
 
+#define BARUS         30     // Barus model for pressure-dependent viscosity
+
 
 
 /*
