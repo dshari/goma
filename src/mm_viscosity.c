@@ -2986,7 +2986,7 @@ barus_viscosity(dbl mu0,
     {
       for(j=0; j<ei->dof[var]; j++)
 	{     
-	  d_mu->lubp[j] = Aexp*mu*bf[var]->phi[j];
+	  d_mu->lubp[j] = Aexp*mu;
 	}
     }
   

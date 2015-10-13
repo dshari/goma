@@ -360,7 +360,7 @@ height_function_model (double *H_U,
 	 }
        dbl b3 = a2 - 2.0*a3*(x2-w2);
        dbl c3 = h1 - a2*(x2-w2) + a3*(x2-w2)*(x2-w2);
-       
+       /*
        // Left parabola
        if(x0 <= x1+w1)
 	 {	   
@@ -385,6 +385,32 @@ height_function_model (double *H_U,
 	 {
 	   *H_U += sr*sin(2*PI*x0/WL);
 	   dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x0/WL);
+	 }
+       */
+       // Left parabola
+       if(x <= x1+w1)
+	 {	   
+	   *H_U = a1*x*x + b1*x + c1;
+	   dH_U_dX[0] = 2*a1*x + b1;   
+	 }
+       // Right parabola
+       else if(x >= x2-w2)
+	 {
+	   *H_U = a3*x*x + b3*x + c3;
+	   dH_U_dX[0] = 2*a3*x + b3;
+	 }
+       // Middle line
+       else
+	 {	   
+	   *H_U = a2*x + b2;
+	   dH_U_dX[0] = a2;
+	 }
+       
+       // Check for surface roughness
+       if(WL)
+	 {
+	   *H_U += sr*sin(2*PI*x/WL);
+	   dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x/WL);
 	 }
 
        dH_U_dX[1]  = 0.0;
