@@ -327,10 +327,18 @@ height_function_model (double *H_U,
        dbl hmax = mp->u_heightU_function_constants[4];
        dbl w1 = mp->u_heightU_function_constants[5];
        dbl w2 = mp->u_heightU_function_constants[6];
-       dbl sr = mp->u_heightU_function_constants[7];
-       dbl WL = mp->u_heightU_function_constants[8];
+       
+       //  Doesn't look like we are doing surface roughness anytime soon
+       //dbl sr = mp->u_heightU_function_constants[7];
+       //dbl WL = mp->u_heightU_function_constants[8];
+       
+       dbl z0 = mp->u_heightU_function_constants[7];
+       dbl t0 = mp->u_heightU_function_constants[8];
+       dbl wf = mp->u_heightU_function_constants[9];
+       dbl df = mp->u_heightU_function_constants[10];
 
        dbl x = fv->x[0];
+       dbl z = fv->x[2];
        //Use undeformed coordinates
        dbl x0 = fv->x0[0];
 
@@ -406,12 +414,28 @@ height_function_model (double *H_U,
 	   dH_U_dX[0] = a2;
 	 }
        
+       dbl Vw = mp->veloL[0];
+       dbl xf1 = x1-(time-t0)*Vw;
+       dbl xf2 = xf1-wf;
+       dbl zf1 = z0+wf/2.0;
+       dbl zf2 = z0-wf/2.0;
+       //Check is we are feature domain
+       if(x<xf1 && x>xf2)
+	 {
+	   if(z>zf1 && z>zf2)
+	     {
+	       *H_U -= df;
+	     }
+	 }
+       
+       /*
        // Check for surface roughness
        if(WL)
 	 {
 	   *H_U += sr*sin(2*PI*x/WL);
 	   dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x/WL);
 	 }
+       */
 
        dH_U_dX[1]  = 0.0;
        dH_U_dX[2]  = 0.0;
