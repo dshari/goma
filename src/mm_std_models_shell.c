@@ -415,16 +415,16 @@ height_function_model (double *H_U,
 	 }
        
        dbl Vw = mp->veloL[0];
-       dbl xf1 = x1-(time-t0)*Vw;
+       dbl xf1 = x1+(time-t0)*Vw;
        dbl xf2 = xf1-wf;
        dbl zf1 = z0+wf/2.0;
        dbl zf2 = z0-wf/2.0;
        //Check is we are feature domain
        if(x<xf1 && x>xf2)
 	 {
-	   if(z>zf1 && z>zf2)
+	   if(z<zf1 && z>zf2)
 	     {
-	       *H_U -= df;
+	       *H_U += df;
 	     }
 	 }
        
