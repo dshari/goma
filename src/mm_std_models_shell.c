@@ -413,19 +413,39 @@ height_function_model (double *H_U,
 	   *H_U = a2*x + b2;
 	   dH_U_dX[0] = a2;
 	 }
-       
-       dbl Vw = mp->veloL[0];
-       dbl xf1 = x1+(time-t0)*Vw;
-       dbl xf2 = xf1-wf;
-       dbl zf1 = z0+wf/2.0;
-       dbl zf2 = z0-wf/2.0;
-       //Check is we are feature domain
-       if(x<xf1 && x>xf2)
+
+       dH_U_dX[1]  = 0.0;
+       dH_U_dX[2]  = 0.0;
+       *dH_U_dp    = 0.0;
+       *dH_U_ddh = 0.0;       
+       *dH_U_dtime = 0.0;
+
+       //Add feature perturbation if present
+       if(wf>0)
 	 {
-	   if(z<zf1 && z>zf2)
+	   dbl Vw = mp->veloL[0];
+	   dbl xf1 = x1+(time-t0)*Vw;
+	   //dbl xf1 = (x1+x2)/2.0;   // For debugging purposes, need feature to be part of domain
+	   dbl xf2 = xf1-wf;
+	   dbl zf1 = z0+wf/2.0;
+	   dbl zf2 = z0-wf/2.0;
+	   
+	   //Trench feature
+	   /*
+	   if(x<xf1 && x>xf2)
 	     {
-	       *H_U += df;
+	       if(z<zf1 && z>zf2)
+		 {
+		   *H_U += df;
+		 }
 	     }
+	   */
+
+	   //Smoothed feature, Just tanh for now, we can fine-tune it later
+	   *H_U += df/2.0*(tanh(x-xf2)-tanh(x-xf1));
+	   dH_U_dX[0] += df/2.0*(1.0/(cosh(x-xf2)*cosh(x-xf2)) - 1.0/(cosh(x-xf1)*cosh(x-xf1)));
+	   *dH_U_dtime -= Vw*df/2.0*(1.0/(cosh(x-xf2)*cosh(x-xf2)) - 1.0/(cosh(x-xf1)*cosh(x-xf1)));
+	   
 	 }
        
        /*
@@ -437,11 +457,6 @@ height_function_model (double *H_U,
 	 }
        */
 
-       dH_U_dX[1]  = 0.0;
-       dH_U_dX[2]  = 0.0;
-       *dH_U_dtime = 0.0;
-       *dH_U_dp    = 0.0;
-       *dH_U_ddh = 0.0;
      }
 
 
