@@ -1473,7 +1473,11 @@ rd_mp_specs(FILE *imp, char input[], int mn, char *echo_file)
   else if ( !strcmp(model_name, "THERMAL") )
     {
       ConstitutiveEquation = THERMAL;
-    } 
+    }
+  else if ( !strcmp(model_name, "BARUS") )
+    {
+      ConstitutiveEquation = BARUS;
+    }  
   else if ( !strcmp(model_name, "CURE") )
     {
       ConstitutiveEquation = CURE;
@@ -1644,6 +1648,7 @@ rd_mp_specs(FILE *imp, char input[], int mn, char *echo_file)
       ConstitutiveEquation == SYLGARD ||
       ConstitutiveEquation == FILLED_EPOXY ||
       ConstitutiveEquation == THERMAL ||
+      ConstitutiveEquation == BARUS ||
       ConstitutiveEquation == CURE ||
       ConstitutiveEquation == HERSCHEL_BULKLEY ||
       ConstitutiveEquation == CARREAU_WLF_CONC_PL ||
@@ -1862,6 +1867,7 @@ rd_mp_specs(FILE *imp, char input[], int mn, char *echo_file)
      ConstitutiveEquation == CARREAU_WLF_CONC_PL ||
      ConstitutiveEquation == CARREAU_WLF_CONC_EXP ||
      ConstitutiveEquation == THERMAL||
+     ConstitutiveEquation == BARUS ||
      ConstitutiveEquation == FOAM_EPOXY)
     {
       model_read = look_for_mat_prop(imp, "Thermal Exponent", 
@@ -8229,6 +8235,23 @@ ECHO("\n----Acoustic Properties\n", echo_file);
 	   mat_ptr->len_u_heightU_function_constants = num_const;
 	   SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightU_function_constants);
 	 }
+
+      else if(model_read == -1 && !strcmp(model_name, "GRAD_FLAT_GRAD"))  
+	{
+	  model_read = 1;
+	  mat_ptr->HeightUFunctionModel = GRAD_FLAT_GRAD;
+	  num_const = read_constants(imp, &(mat_ptr->u_heightU_function_constants), NO_SPECIES);
+	  if( num_const < 8)
+	    {
+	      sr = sprintf(err_msg, 
+			   "Matl %s needs 8 constants for %s %s model.\n",
+			   pd_glob[mn]->MaterialName,
+			   "Upper Height Function", "GRAD_FLAT_GRAD");
+	      EH(-1, err_msg);
+	    }
+	  mat_ptr->len_u_heightU_function_constants = num_const;
+	  SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightU_function_constants);
+	}
 
        else if ( model_read == -1 && !strcmp(model_name, "CIRCLE_MELT") )
 	 {

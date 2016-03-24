@@ -2776,6 +2776,7 @@ struct viscosity_dependence
   double nn[MDE];          /* bond concentration dependence */
   double gd;               /* strain rate dependence */
   double pf[MAX_PHASE_FUNC][MDE];  /* phase function */
+  double lubp[MDE];               //Lubrication pressure dependence
 };
 typedef struct viscosity_dependence VISCOSITY_DEPENDENCE_STRUCT;
 

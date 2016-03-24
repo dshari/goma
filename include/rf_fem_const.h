@@ -998,7 +998,7 @@
 #endif
 
 #ifndef MAX_PROB_VAR           
-#define MAX_PROB_VAR            14 /* maximum number of variable types
+#define MAX_PROB_VAR            26 /* maximum number of variable types
 				    * in any one problem  */
 #endif
 

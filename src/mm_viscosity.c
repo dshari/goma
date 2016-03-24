@@ -464,6 +464,17 @@ viscosity(struct Generalized_Newtonian *gn_local,
 	    }
 	}
     }
+  else if(gn_local->ConstitutiveEquation == BARUS)
+    {
+      double mu0, atexp;
+      mu0=gn_local->mu0; 
+      atexp= gn_local->atexp;
+
+      err = barus_viscosity(mu0, atexp, d_mu);
+      EH(err, "barus_viscosity");
+      
+      mu = mp->viscosity;
+    }
   else if (gn_local->ConstitutiveEquation == BOND)
     {
       err = bond_viscosity(gn_local->mu0, gn_local->muinf, gn_local->aexp);
@@ -2945,6 +2956,45 @@ thermal_viscosity(dbl mu0,	/* reference temperature fluid viscosity */
 
 
 /*
+ *   Barus viscosity model for pressure-dependent viscosity
+ *   Viscosity takes the form:
+ *   mu=mu0*exp(Aexp*P)
+ *   
+ *  This is implemented for use in lubrication shells only
+ */
+int
+barus_viscosity(dbl mu0,	
+		dbl Aexp,	
+		VISCOSITY_DEPENDENCE_STRUCT *d_mu)
+{
+  
+  dbl mu;   // Viscosity
+  dbl P;    // Pressure
+  int var, j, status = 1;
+
+  if(!pd->v[LUBP])
+    {
+      return(0);
+    }
+                                        
+  P = fv->lubp;
+  mu = mu0*exp(Aexp*P);
+  mp->viscosity = mu;
+
+  var = LUBP;
+  if(d_mu!=NULL && pd->v[var])
+    {
+      for(j=0; j<ei->dof[var]; j++)
+	{     
+	  d_mu->lubp[j] = Aexp*mu;
+	}
+    }
+  
+  return(status);
+}
+
+
+/*
  *
  *  cure viscosity model
  *
@@ -3326,6 +3376,7 @@ carreau_wlf_conc_viscosity(struct Generalized_Newtonian *gn_local,
  
    return(mu);
  }
+
 
 int
 ls_modulate_viscosity ( double *mu1,

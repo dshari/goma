@@ -3997,6 +3997,16 @@ calculate_lub_q_v (
 	{
 	  dmu_dc = mp->d_viscosity[SHELL_PARTC];
 	}
+
+      dbl D_MU_DLUBP[MDE];
+      memset(D_MU_DLUBP, 0.0, sizeof(double)*MDE);
+      if(gn->ConstitutiveEquation == BARUS)
+	{
+	  for(k = 0; k < ei->dof[LUBP]; k++) 
+	    {
+	      D_MU_DLUBP[k] = d_mu->lubp[k];
+	    }
+	}
       
       /********** CALCULATE FLOW RATE AND AVERAGE VELOCITY **********/
       
@@ -4047,12 +4057,14 @@ calculate_lub_q_v (
       for ( i = 0; i < dim; i++) {
 	for ( j = 0; j < ei->dof[EQN]; j++) {
 	  D_Q_DP1[i][j] -= pow(H,3)/(k_turb * mu) * D_GRADP_DP[i][j];
+	  D_Q_DP2[i][j] += pow(H,3)/(k_turb*mu*mu)*D_MU_DLUBP[j]*(GRADP[i]-GRAV[i]);
 	  D_Q_DP2[i][j] += D_Q_DH[i] * D_H_DP[j];
 	}
       }
       for ( i = 0; i < dim; i++) {
 	for ( j = 0; j < ei->dof[EQN]; j++) {
 	  D_V_DP1[i][j] -= pow(H,2)/(k_turb * mu) * D_GRADP_DP[i][j];
+	  D_V_DP2[i][j] += pow(H,2)/(k_turb*mu*mu)*D_MU_DLUBP[j]*(GRADP[i]-GRAV[i]);
 	  D_V_DP2[i][j] += D_V_DH[i] * D_H_DP[j];
 	}
       }
