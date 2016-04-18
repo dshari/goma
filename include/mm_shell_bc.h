@@ -89,6 +89,12 @@ PROTO((double func[DIM],
        const int eb_mat_lubp,     /* element block for lubp equation */
        const int eb_mat_filmp));  /* element block for filmp equation */
 
+EXTERN void match_lubrication_height
+PROTO((double func[DIM],
+       double d_func[DIM][MAX_VARIABLE_TYPES + MAX_CONC][MDE],
+       double time,
+       double dt));
+
 
 EXTERN void put_lub_flux_in_film /* mm_shell_bc.c                    */
 PROTO((int ,			/* id - local element node number for the 

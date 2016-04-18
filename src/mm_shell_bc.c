@@ -1409,6 +1409,174 @@ void
   return;
 }
 
+/*
+ * This routine is to match the height of a confined lubrication film and a free surface lubrication
+ * film at its interface
+ * DSH 04/2016
+ */
+void match_lubrication_height(double func[],
+			      double d_func[DIM][MAX_VARIABLE_TYPES + MAX_CONC][MDE],
+			      double time,
+			      double dt)
+{
+  int var, i, j, k, jk, dim=pd->Num_Dim;
+  dbl H;
+  dbl veloL[DIM], veloU[DIM];
+  dbl H_U, dH_U_dtime, H_L, dH_L_dtime;
+  dbl dH_U_dX[DIM],dH_L_dX[DIM], dH_U_dp, dH_U_ddh;
+
+
+  if(pd->v[LUBP])
+    {
+    
+      H = height_function_model(&H_U, &dH_U_dtime, &H_L, &dH_L_dtime, dH_U_dX, dH_L_dX, &dH_U_dp, &dH_U_ddh, time, dt);
+      velocity_function_model(veloU, veloL, time, dt);            
+      
+      dbl D_H_DX[DIM][MDE], D_H_DP[MDE], D_H_DdH[MDE];
+      dbl D_H_DRS[DIM][MDE];
+      dbl D_H_DNORMAL[DIM][MDE];
+      memset(D_H_DX,  0.0, sizeof(double)*DIM*MDE);
+      memset(D_H_DRS, 0.0, sizeof(double)*DIM*MDE);
+      memset(D_H_DNORMAL, 0.0, sizeof(double)*DIM*MDE);
+      memset(D_H_DP,  0.0, sizeof(double)*MDE);
+      memset(D_H_DdH, 0.0, sizeof(double)*MDE);
+      
+      /* Deform height */
+      switch ( mp->FSIModel ) {
+      case FSI_MESH_CONTINUUM:
+      case FSI_MESH_UNDEF:
+      case FSI_SHELL_ONLY_UNDEF:
+	for ( i = 0; i < dim; i++) {
+	  H -= fv->snormal[i] * fv->d[i];
+	}
+	break;
+      case FSI_SHELL_ONLY_MESH:
+	if (pd->e[R_SHELL_NORMAL1] && pd->e[R_SHELL_NORMAL2] && pd->e[R_SHELL_NORMAL3] )
+	  {
+	    for ( i = 0; i < dim; i++)
+	      {
+		H -= fv->n[i] * fv->d[i];
+	      }
+	  }
+	else
+	  {
+	    for ( i = 0; i < dim; i++)
+	      {
+		H -= fv->snormal[i] * fv->d[i];
+	      }
+	  }
+	break;
+      case FSI_REALSOLID_CONTINUUM:
+	for ( i = 0; i < dim; i++) {
+	  H -= fv->snormal[i] * fv->d_rs[i];
+	}
+	break;
+      }
+  
+      func[0] -= H;
+
+      var = MESH_DISPLACEMENT1;
+      if(pd->v[var] && (mp->FSIModel == FSI_MESH_CONTINUUM ||
+			mp->FSIModel == FSI_REALSOLID_CONTINUUM ||
+			mp->FSIModel == FSI_MESH_UNDEF ||
+			mp->FSIModel == FSI_SHELL_ONLY_MESH ||
+			mp->FSIModel == FSI_SHELL_ONLY_UNDEF)) 
+	{
+	  /* Calculate height sensitivity to mesh */
+	  switch ( mp->FSIModel ) {
+	  case FSI_MESH_CONTINUUM:
+	  case FSI_MESH_UNDEF:
+	  case FSI_SHELL_ONLY_UNDEF:
+	    for ( i = 0; i < dim; i++) {
+	      for ( j = 0; j < dim; j++) {
+		for ( k = 0; k < ei->dof[MESH_DISPLACEMENT1]; k++) {
+		  jk = dof_map[k];
+		  D_H_DX[j][jk] += delta(i,j)*(dH_U_dX[i]-dH_L_dX[i])*bf[MESH_DISPLACEMENT1]->phi[k];
+		  D_H_DX[j][jk] -= fv->dsnormal_dx[i][j][jk] * fv->d[i];
+		  D_H_DX[j][jk] -= fv->snormal[i] * delta(i,j) * bf[MESH_DISPLACEMENT1]->phi[k];
+		}
+	      }
+	    }
+	    break;
+	  case FSI_SHELL_ONLY_MESH:
+	    if ( (pd->e[R_SHELL_NORMAL1]) && (pd->e[R_SHELL_NORMAL2]) && (pd->e[R_SHELL_NORMAL3]) )
+	      {
+		for ( i = 0; i < dim; i++)
+		  {
+		    for ( j = 0; j < dim; j++)
+		      {
+			for ( k = 0; k < ei->dof[MESH_DISPLACEMENT1]; k++)
+			  {
+			    jk = dof_map[k];
+			    D_H_DX[j][jk] += delta(i,j)*(dH_U_dX[i]-dH_L_dX[i])
+			      *bf[MESH_DISPLACEMENT1]->phi[k];
+			    D_H_DX[j][jk] -= fv->n[i] * delta(i,j) * bf[MESH_DISPLACEMENT1]->phi[k];
+			  }
+		      }
+		  }
+	      }
+	    else
+	      {
+		for ( i = 0; i < dim; i++)
+		  {
+		    for ( j = 0; j < dim; j++)
+		      {
+			for ( k = 0; k < ei->dof[MESH_DISPLACEMENT1]; k++)
+			  {
+			    jk = dof_map[k];
+			    D_H_DX[j][jk] += delta(i,j)*(dH_U_dX[i]-dH_L_dX[i])
+			      *bf[MESH_DISPLACEMENT1]->phi[k];
+			    D_H_DX[j][jk] -= fv->dsnormal_dx[i][j][jk] * fv->d[i];
+			    D_H_DX[j][jk] -= fv->snormal[i] * delta(i,j) 
+			      * bf[MESH_DISPLACEMENT1]->phi[k];
+			  }
+		      }
+		  }
+	      }
+	    break;
+	  case FSI_REALSOLID_CONTINUUM:
+	    for ( i = 0; i < dim; i++) {
+	      for ( j = 0; j < dim; j++) {
+		for ( k = 0; k < ei->dof[MESH_DISPLACEMENT1]; k++) {
+		  jk = dof_map[k];
+		  D_H_DX[j][jk] += delta(i,j)*(dH_U_dX[i]-dH_L_dX[i])*bf[MESH_DISPLACEMENT1]->phi[k];
+		  D_H_DX[j][jk] -= fv->dsnormal_dx[i][j][jk] * fv->d_rs[i];
+		}
+		for ( k = 0; k < ei->dof[SOLID_DISPLACEMENT1]; k++) {
+		  jk = dof_map[k];
+		  D_H_DRS[j][jk] -= fv->snormal[i] * delta(i,j) * bf[SOLID_DISPLACEMENT1]->phi[jk];
+		}
+	      }
+	    }
+	    break;
+	  }
+
+
+
+	}
+
+
+    }
+  else
+    {
+      func[0] += fv->sh_fh;
+      if(af->Assemble_Jacobian) 
+	{
+	var = SHELL_FILMH;
+	for(j=0; j<ei->dof[var]; j++)
+	  {
+	    if (pd->v[var])
+	      {
+		d_func[0][var][j] += bf[var]->phi[j];
+	      }
+	  }
+      }
+    }
+  
+  
+  return; 
+}
+
 /****************************************************************************/
 /*
  * This function equates the mass flux on the boundary between a lubrication 

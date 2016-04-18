@@ -628,6 +628,10 @@ apply_integrated_bc(double x[],           /* Solution vector for the current pro
 					  bc->BC_Data_Int[1]);
 	  break;
 
+	case FILMH_MATCH_LUBH_BC:
+	  match_lubrication_height(func, d_func, time_value, delta_t);
+	  break;
+
         case KIN_ELECTRODEPOSITION_BC:  /*  RSL 5/28/02  */
 	  if (iapply) {
 	    kin_bc_electrodeposition(func, d_func, time_value, theta, delta_t, bc_input_id, BC_Types);

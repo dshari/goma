@@ -981,6 +981,7 @@
 #define LUB_PRESS_2_BC  777000022
 #define SHELL_OPEN_PRESS_2_BC 777000023
 #define LUB_STATIC_BC 777000024
+#define FILMH_MATCH_LUBH_BC 777000025
 
 
 /* Vectors used for rotations */
