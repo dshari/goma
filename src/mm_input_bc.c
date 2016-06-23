@@ -461,7 +461,7 @@ rd_bc_specs(FILE *ifp,
         case SHELL_FLOW_DEVELOPED_BC:
         case SHELL_GRAD_FH_NOBC_BC:
         case SHELL_GRAD_PC_NOBC_BC:
-	case FILMH_MATCH_LUBH_BC:
+	  //case FILMH_MATCH_LUBH_BC:
 	  break;
 
 	  /* Fall through for all cases which require a single floating point
@@ -2169,6 +2169,7 @@ rd_bc_specs(FILE *ifp,
         case SURFACE_USER_SHELL_BC:
         case SURFACE_LUBRICATION_BC:
         case LUBP_SH_FP_MATCH_BC:
+	case FILMH_MATCH_LUBH_BC:
         case LUBP_SH_FP_FLUX_BC:
         case T_CONTACT_RESIS_BC:
         case T_CONTACT_RESIS_2_BC:

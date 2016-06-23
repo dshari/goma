@@ -1417,17 +1417,18 @@ void
 void match_lubrication_height(double func[],
 			      double d_func[DIM][MAX_VARIABLE_TYPES + MAX_CONC][MDE],
 			      double time,
-			      double dt)
+			      double dt,
+			      int eb_mat_lubp,
+			      int eb_mat_filmp)
 {
   int var, i, j, k, jk, dim=pd->Num_Dim;
   dbl H;
   dbl veloL[DIM], veloU[DIM];
   dbl H_U, dH_U_dtime, H_L, dH_L_dtime;
   dbl dH_U_dX[DIM],dH_L_dX[DIM], dH_U_dp, dH_U_ddh;
-
-
-  if(pd->v[LUBP])
-    {
+  
+  if (Current_EB_ptr->Elem_Blk_Id == eb_mat_lubp)
+    {   
     
       H = height_function_model(&H_U, &dH_U_dtime, &H_L, &dH_L_dtime, dH_U_dX, dH_L_dX, &dH_U_dp, &dH_U_ddh, time, dt);
       velocity_function_model(veloU, veloL, time, dt);            
@@ -1476,8 +1477,8 @@ void match_lubrication_height(double func[],
       func[0] -= H;
 
     }
-  else
-    {
+  else if (Current_EB_ptr->Elem_Blk_Id == eb_mat_filmp)
+    {    
       func[0] += fv->sh_fh;
       if(af->Assemble_Jacobian) 
 	{
