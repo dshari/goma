@@ -1419,13 +1419,20 @@ void match_lubrication_height(double func[],
 			      double time,
 			      double dt,
 			      int eb_mat_lubp,
-			      int eb_mat_filmp)
+			      int eb_mat_filmp,
+			      double xi[DIM],        /* Local stu coordinates */
+			      const Exo_DB *exo)
+
 {
   int var, i, j, k, jk, dim=pd->Num_Dim;
   dbl H;
   dbl veloL[DIM], veloU[DIM];
   dbl H_U, dH_U_dtime, H_L, dH_L_dtime;
   dbl dH_U_dX[DIM],dH_L_dX[DIM], dH_U_dp, dH_U_ddh;
+  int dof_map[MDE];
+  int *n_dof = (int *) array_alloc (1, MAX_VARIABLE_TYPES, sizeof(int));
+  lubrication_shell_initialize(n_dof, dof_map, -1, xi, exo, 0);
+  
   
   if (Current_EB_ptr->Elem_Blk_Id == eb_mat_lubp)
     {   
@@ -1475,6 +1482,92 @@ void match_lubrication_height(double func[],
       }
   
       func[0] -= H;
+      
+      if(af->Assemble_Jacobian)
+	{
+	  /* Calculate height sensitivity to mesh */
+	  switch (mp->FSIModel ) {
+	  case FSI_MESH_CONTINUUM:
+	  case FSI_MESH_UNDEF:
+	  case FSI_SHELL_ONLY_UNDEF:
+	    for ( i = 0; i < dim; i++) {
+	      for ( j = 0; j < dim; j++) {
+		for ( k = 0; k < ei->dof[MESH_DISPLACEMENT1]; k++) {
+		  jk = dof_map[k];
+		  D_H_DX[j][jk] += delta(i,j)*(dH_U_dX[i]-dH_L_dX[i])*bf[MESH_DISPLACEMENT1]->phi[k];
+		  D_H_DX[j][jk] -= fv->dsnormal_dx[i][j][jk] * fv->d[i];
+		  D_H_DX[j][jk] -= fv->snormal[i] * delta(i,j) * bf[MESH_DISPLACEMENT1]->phi[k];
+		}
+	      }
+	    }
+	    break;
+	  case FSI_SHELL_ONLY_MESH:
+	    if ( (pd->e[R_SHELL_NORMAL1]) && (pd->e[R_SHELL_NORMAL2]) && (pd->e[R_SHELL_NORMAL3]) )
+	      {
+		for ( i = 0; i < dim; i++)
+		  {
+		    for ( j = 0; j < dim; j++)
+		      {
+			for ( k = 0; k < ei->dof[MESH_DISPLACEMENT1]; k++)
+			  {
+			    jk = dof_map[k];
+			    D_H_DX[j][jk] += delta(i,j)*(dH_U_dX[i]-dH_L_dX[i])*bf[MESH_DISPLACEMENT1]->phi[k];
+			    D_H_DX[j][jk] -= fv->n[i] * delta(i,j) * bf[MESH_DISPLACEMENT1]->phi[k];
+			  }
+		      }
+		  }
+	      }
+	    else
+	      {
+		for ( i = 0; i < dim; i++)
+		  {
+		    for ( j = 0; j < dim; j++)
+		      {
+			for ( k = 0; k < ei->dof[MESH_DISPLACEMENT1]; k++)
+			  {
+			    jk = dof_map[k];
+			    D_H_DX[j][jk] += delta(i,j)*(dH_U_dX[i]-dH_L_dX[i])*bf[MESH_DISPLACEMENT1]->phi[k];
+			    D_H_DX[j][jk] -= fv->dsnormal_dx[i][j][jk] * fv->d[i];
+			    D_H_DX[j][jk] -= fv->snormal[i] * delta(i,j) * bf[MESH_DISPLACEMENT1]->phi[k];
+			  }
+		      }
+		  }
+	      }
+	    break;
+	  case FSI_REALSOLID_CONTINUUM:
+	    for ( i = 0; i < dim; i++) {
+	      for ( j = 0; j < dim; j++) {
+		for ( k = 0; k < ei->dof[MESH_DISPLACEMENT1]; k++) {
+		  jk = dof_map[k];
+		  D_H_DX[j][jk] += delta(i,j)*(dH_U_dX[i]-dH_L_dX[i])*bf[MESH_DISPLACEMENT1]->phi[k];
+		  D_H_DX[j][jk] -= fv->dsnormal_dx[i][j][jk] * fv->d_rs[i];
+		}
+		for ( k = 0; k < ei->dof[SOLID_DISPLACEMENT1]; k++) {
+		  jk = dof_map[k];
+		  D_H_DRS[j][jk] -= fv->snormal[i] * delta(i,j) * bf[SOLID_DISPLACEMENT1]->phi[jk];
+		}
+	      }
+	    }
+	    break;
+	  }
+	}
+
+      
+
+      var = MESH_DISPLACEMENT1;
+      if(pd->v[var])
+	{     
+	  for(i=0; i<dim; i++)
+	    {
+	      var = MESH_DISPLACEMENT1 + i;		  
+	      for(j=0; j<ei->dof[var]; j++)
+		{
+		  d_func[0][var][j] -= D_H_DX[i][j];
+		}
+	    }
+	}
+	
+
 
     }
   else if (Current_EB_ptr->Elem_Blk_Id == eb_mat_filmp)
