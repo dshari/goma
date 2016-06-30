@@ -2674,6 +2674,8 @@ set_interaction_masks(Exo_DB *exo)
           if(Num_Var_In_Type[v])  eqn_var_mask[e][v] = 1;
 	  v = SHELL_FILMP;
           if(Num_Var_In_Type[v])  eqn_var_mask[e][v] = 1;
+	  v = SHELL_FILMH;
+          if(Num_Var_In_Type[v])  eqn_var_mask[e][v] = 1;
           v = SHELL_PARTC;
           if(Num_Var_In_Type[v])  eqn_var_mask[e][v] = 1;
 	  v = SOLID_DISPLACEMENT1;

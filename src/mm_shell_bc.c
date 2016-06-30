@@ -1432,8 +1432,8 @@ void match_lubrication_height(double func[],
   int dof_map[MDE];
   int *n_dof = (int *) array_alloc (1, MAX_VARIABLE_TYPES, sizeof(int));
   lubrication_shell_initialize(n_dof, dof_map, -1, xi, exo, 0);
-  
-  
+
+  //For some reason pd struct is useless for this BC, so use input values for material block
   if (Current_EB_ptr->Elem_Blk_Id == eb_mat_lubp)
     {   
     
@@ -1562,7 +1562,8 @@ void match_lubrication_height(double func[],
 	      var = MESH_DISPLACEMENT1 + i;		  
 	      for(j=0; j<ei->dof[var]; j++)
 		{
-		  d_func[0][var][j] -= D_H_DX[i][j];
+		  jk = dof_map[j];
+		  d_func[0][var][jk] -= D_H_DX[i][jk];
 		}
 	    }
 	}
@@ -1609,7 +1610,9 @@ put_lub_flux_in_film(int id, /* local element node number for the
 		     double resid_vector[], /* Residual vector         */
 		     int i_mat_lubp,  /* elem block id's of confined film */
 		     int i_mat_filmp, /* elem block id's of free film     */
-		     int local_node_list_fs[]) /* MDE list to keep track
+		     int local_node_list_fs[],
+		     double xi[DIM],    /* Local stu coordinates */
+		     const Exo_DB *exo)  /* MDE list to keep track
 						* of nodes at which 
 						* solid contributions 
 						* have been transfered
@@ -1617,9 +1620,14 @@ put_lub_flux_in_film(int id, /* local element node number for the
 						* boundaries)          */
 
 {
-    int j_id, dim, var, pvar, q, id_doflubp, id_doffilmp;
+  int j_id, dim, var, pvar, q, id_doflubp, id_doffilmp, jk;
     int peqn_lubp, peqn_filmp;
     int ieqn_lubp, ieqn_filmp;
+    int dof_map[MDE];
+    int *n_dof = (int *) array_alloc (1, MAX_VARIABLE_TYPES, sizeof(int));
+    
+    lubrication_shell_initialize(n_dof, dof_map, -1, xi, exo, 0);
+                                                                 
 
     dim = pd->Num_Dim;
 
@@ -1701,8 +1709,9 @@ put_lub_flux_in_film(int id, /* local element node number for the
 		pvar = upd->vp[var];
 		for ( j_id=0; j_id<ei->dof[var]; j_id++)
 		  {
-		    lec->J[peqn_filmp][pvar][id_doffilmp][j_id] =
-		      -lec->J[peqn_lubp][pvar][id_doflubp][j_id];
+		    jk = dof_map[j_id];
+		    lec->J[peqn_filmp][pvar][id_doffilmp][jk] =
+		      -lec->J[peqn_lubp][pvar][id_doflubp][jk];
 		  }
 	      }
 	  }

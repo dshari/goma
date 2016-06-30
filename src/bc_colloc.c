@@ -425,7 +425,12 @@ apply_point_colloc_bc (
 	      put_lub_flux_in_film(id, I, ielem_dim, resid_vector,
 				   (int) BC_Types[bc_input_id].BC_Data_Int[0],
 				   (int) BC_Types[bc_input_id].BC_Data_Int[1],
-				   local_node_list_fs);
+				   local_node_list_fs, xi, exo);
+	      surface_determinant_and_normal(ielem, iconnect_ptr, num_local_nodes, 
+					     ielem_dim - 1,  
+					     (int) elem_side_bc->id_side,
+					     (int) elem_side_bc->num_nodes_on_side,
+					     (elem_side_bc->local_elem_node_id) );
 	      func = 0.;
 	      break;
 

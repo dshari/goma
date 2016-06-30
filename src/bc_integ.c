@@ -629,7 +629,13 @@ apply_integrated_bc(double x[],           /* Solution vector for the current pro
 	  break;
 
 	case FILMH_MATCH_LUBH_BC:
-	  match_lubrication_height(func, d_func, time_value, delta_t, bc->BC_Data_Int[0], bc->BC_Data_Int[1], xi, exo);
+	  match_lubrication_height(func, d_func, time_value, delta_t, bc->BC_Data_Int[0],
+				   bc->BC_Data_Int[1], xi, exo);
+	  surface_determinant_and_normal(ielem, iconnect_ptr, num_local_nodes, 
+					 ielem_dim - 1,  
+					 (int) elem_side_bc->id_side,
+					 (int) elem_side_bc->num_nodes_on_side,
+					 (elem_side_bc->local_elem_node_id) );
 	  break;
 
         case KIN_ELECTRODEPOSITION_BC:  /*  RSL 5/28/02  */

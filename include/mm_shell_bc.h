@@ -111,9 +111,10 @@ PROTO((int ,			/* id - local element node number for the
        double [],		/* resid_vector - Residual vector NO DUH!    */
        int ,			/* i_mat_lubp     */
        int ,			/* i_mat_filmp    */
-       int []));		/* local_node_list_fs - MDE list to keep track
+       int [],                  /* local_node_list_fs - MDE list to keep track
 				 * of nodes at which liquid contributions have
 				 * been transfered to solid (fluid-solid 
 				 * boundaries)                               */
-
+       double xi[DIM],        /* Local stu coords */
+       const Exo_DB *exo));   /* ExodusII database struct pointer */		
 #endif
