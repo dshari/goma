@@ -2178,8 +2178,10 @@ apply_integrated_bc(double x[],           /* Solution vector for the current pro
 			(eb_in_matrl(BC_Types[bc_input_id].BC_Data_Int[0], mn) ||
 			 eb_in_matrl(BC_Types[bc_input_id].BC_Data_Int[1], mn)))
 		      {
-			type = pd_glob[mn]->w[eqn];
-			if (bfi[type] == NULL) EH(-1,"Illegal cross basis func");
+			//type = pd_glob[mn]->w[eqn];
+			type = bc_desc->equation;
+			//if (bfi[type] == NULL) EH(-1,"Illegal cross basis func");
+			
 			/* note that here, we don't have the ln_to_dof
 			   array for the adjacent 
 			   material - for now assume that ldof_eqn = id */
@@ -2187,7 +2189,9 @@ apply_integrated_bc(double x[],           /* Solution vector for the current pro
 			   are used for velocity, then we
 			   cannot apply these sorts of BCs
 			   --ADD DIAGNOSTIC  */
-			phi_i = bfi[type]->phi[id];
+			
+			//phi_i = bfi[type]->phi[id];
+			phi_i = bf[type]->phi[id];
 			weight *= phi_i;
 		      }
 		  }
