@@ -2191,7 +2191,7 @@ apply_integrated_bc(double x[],           /* Solution vector for the current pro
 			   --ADD DIAGNOSTIC  */
 			
 			//phi_i = bfi[type]->phi[id];
-			phi_i = bf[type]->phi[id];
+			phi_i = bf[eqn]->phi[id];
 			weight *= phi_i;
 		      }
 		  }
