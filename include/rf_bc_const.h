@@ -380,12 +380,14 @@
 
 #define U_BC     1
 #define UVARY_BC 3
+#define U_PARABOLA_BC 35
 #define UUSER_BC 4
 
 #define PU_BC     5
 
 #define V_BC     10
 #define VVARY_BC 30
+#define V_PARABOLA_BC 305
 #define VUSER_BC 40
 
 #define PV_BC     50
@@ -393,6 +395,7 @@
 #define W_BC     100
 
 #define WVARY_BC 300
+#define W_PARABOLA_BC 3005
 #define WUSER_BC 400
 
 #define PW_BC     500
@@ -687,6 +690,7 @@
 #define PLANEY_BC 950000000
 #define PLANEZ_BC 960000000
 #define PLANE_BC  961000000
+#define FILLET_BC  961123400
 #define TENSION_SHEET_BC 96210200
 #define MOVING_PLANE_BC  96110000
 #define SM_PLANE_BC 961200000        /* Solid Model PLANE BC */

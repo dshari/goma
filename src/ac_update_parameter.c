@@ -459,9 +459,13 @@ update_BC_parameter(double lambda, /* Parameter value */
 	case SPLINEX_RS_BC:
  	case SPLINEY_RS_BC:
  	case SPLINEZ_RS_BC:
+	case FILLET_BC:
 	case UVARY_BC:
 	case VVARY_BC:
 	case WVARY_BC:
+	case U_PARABOLA_BC:
+	case V_PARABOLA_BC:
+	case W_PARABOLA_BC:
 	case PRESSURE_USER_BC:
 	case FLOW_PRESS_USER_BC:
 	case T_USER_BC:
@@ -1135,9 +1139,13 @@ retrieve_BC_parameter(double *lambda, /* Parameter value */
  	case SPLINEX_RS_BC:
  	case SPLINEY_RS_BC:
  	case SPLINEZ_RS_BC:
+	case FILLET_BC:
 	case UVARY_BC:
 	case VVARY_BC:
 	case WVARY_BC:
+	case U_PARABOLA_BC:
+	case V_PARABOLA_BC:
+	case W_PARABOLA_BC:
 	case PRESSURE_USER_BC:
 	case FLOW_PRESS_USER_BC:
 	case T_USER_BC:

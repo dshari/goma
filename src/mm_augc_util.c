@@ -181,9 +181,13 @@ load_extra_unknownsAC(int iAC,    /* ID NUMBER OF AC'S */
         case SPLINEX_RS_BC:
         case SPLINEY_RS_BC:
         case SPLINEZ_RS_BC:
+        case FILLET_BC:
         case UVARY_BC:
         case VVARY_BC:
         case WVARY_BC:
+        case U_PARABOLA_BC:
+        case V_PARABOLA_BC:
+        case W_PARABOLA_BC:
         case PRESSURE_USER_BC:
         case FLOW_PRESS_USER_BC:
         case T_USER_BC:
@@ -721,9 +725,13 @@ update_parameterAC(int iAC,      /* ID NUMBER OF The AC */
 		case SPLINEX_RS_BC:
 		case SPLINEY_RS_BC:
 		case SPLINEZ_RS_BC:
+		case FILLET_BC:
 		case UVARY_BC:
 		case VVARY_BC:
 		case WVARY_BC:
+		case U_PARABOLA_BC:
+		case V_PARABOLA_BC:
+		case W_PARABOLA_BC:
 		case PRESSURE_USER_BC:
 		case FLOW_PRESS_USER_BC:
 		case T_USER_BC:
@@ -790,9 +798,13 @@ update_parameterAC(int iAC,      /* ID NUMBER OF The AC */
         case SPLINEX_RS_BC:
         case SPLINEY_RS_BC:
         case SPLINEZ_RS_BC:
+        case FILLET_BC:
         case UVARY_BC:
         case VVARY_BC:
         case WVARY_BC:
+        case U_PARABOLA_BC:
+        case V_PARABOLA_BC:
+        case W_PARABOLA_BC:
         case PRESSURE_USER_BC:
         case FLOW_PRESS_USER_BC:
         case T_USER_BC:

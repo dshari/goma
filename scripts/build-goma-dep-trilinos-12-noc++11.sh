@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 #
+#  This software is distributed under the GNU General Public License.
+#
 # Goma dependency build script
 #
 # 2014, July: Created by Cory Miner based off of notes by Scott Roberts
@@ -42,7 +44,8 @@ if [ -z "$1" ]
     exit 1
 fi
 
-GOMA_LIB=$1
+cd $1
+GOMA_LIB=`pwd`
 export GOMA_LIB
 
 OWNER=$USER

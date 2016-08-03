@@ -1269,6 +1269,7 @@ noahs_ark()
       ddd_add_member(n, &cont->eps,               1, MPI_DOUBLE);
       ddd_add_member(n,  cont->use_var_norm, MAX_VARIABLE_TYPES, MPI_INT);
       ddd_add_member(n, &cont->print_freq,        1, MPI_INT);
+      ddd_add_member(n, &cont->fix_freq, 1, MPI_INT);
       ddd_add_member(n, &cont->print_delt,        1, MPI_DOUBLE);
       ddd_add_member(n, &cont->print_delt2_path,  1, MPI_DOUBLE);
       ddd_add_member(n, &cont->print_delt2,       1, MPI_DOUBLE);
@@ -1974,6 +1975,7 @@ noahs_ark()
       ddd_add_member(n, mp_glob[i]->len_u_species_vol_expansion, MAX_CONC, 
 		     MPI_INT);
       ddd_add_member(n, mp_glob[i]->len_u_vapor_pressure, MAX_CONC, MPI_INT);
+      ddd_add_member(n, mp_glob[i]->len_u_reference_concn, MAX_CONC, MPI_INT);
 
       /*
        *    vectors of length to accomodate porous phases
@@ -2968,6 +2970,9 @@ ark_landing()
 
 	  dalloc( m->len_u_vapor_pressure[j],
 		  m->    u_vapor_pressure[j]);
+
+	  dalloc( m->len_u_reference_concn[j],
+		  m->    u_reference_concn[j]);
 	}
 
       /*
@@ -3353,6 +3358,8 @@ noahs_dove()
 	      m->    u_species_vol_expansion[j]);
 	crdv( m->len_u_vapor_pressure[j],
 	      m->    u_vapor_pressure[j]);
+	crdv( m->len_u_reference_concn[j],
+	      m->    u_reference_concn[j]);
 #ifdef DEBUG
 	printf("\tP%d: End of Loop for species %d\n", ProcID, j);
 	fflush(stdout);

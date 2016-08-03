@@ -350,6 +350,12 @@ apply_point_colloc_bc (
 		fplane(ielem_dim, &func, d_func, 
 		       BC_Types[bc_input_id].BC_Data_Float);
 		break;
+
+
+	    case FILLET_BC:
+		f_fillet(ielem_dim, &func, d_func, 
+		       BC_Types[bc_input_id].u_BC,BC_Types[bc_input_id].len_u_BC);
+		break;
 #ifdef USE_CGM
 	    case SM_PLANE_BC:       /* Solid Model PLANE BC */
 	      /* I took out the plane generation at the BC level.  It
@@ -381,13 +387,23 @@ apply_point_colloc_bc (
 	      fmesh_constraint(&func, d_func, bc_input_id);
 	      break;
 
-	    case VVARY_BC:
 	    case UVARY_BC:
+	    case VVARY_BC:
 	    case WVARY_BC:
 		var_flag = BC_Types[bc_input_id].desc->equation;
 		fvelocity_profile(var_flag, ielem_dim, BC_Types[bc_input_id].BC_Name,
 				  &func, d_func, BC_Types[bc_input_id].u_BC,
 				  time_intermediate);
+		break;
+		    
+	    case U_PARABOLA_BC:
+	    case V_PARABOLA_BC:
+	    case W_PARABOLA_BC:
+		var_flag = BC_Types[bc_input_id].desc->equation;
+		fvelocity_parabola(var_flag, ielem_dim, 
+			BC_Types[bc_input_id].BC_Name,
+			&func, d_func, BC_Types[bc_input_id].u_BC,
+			time_intermediate,BC_Types[bc_input_id].len_u_BC);
 		break;
 		    
 	    case GD_CONST_BC:
@@ -727,6 +743,69 @@ fplane (int ielem_dim,
 } /* END of routine fplane                                                   */
 /*****************************************************************************/
 
+void 
+f_fillet (int ielem_dim,
+        double *func,
+        double d_func[],	/* dimensioned [MAX_VARIABLE_TYPES+MAX_CONC] */
+        const double *p,		/*  function parameters from data card  */
+        const int num_const)           /* number of passed parameters   */
+{    
+/**************************** EXECUTION BEGINS *******************************/
+  int  i;
+  double xpt, ypt, theta1, theta2, rad, xcen , ycen, alpha;
+  double theta;
+
+  if(af->Assemble_LSA_Mass_Matrix)
+    return;
+
+  if(num_const != 5)
+       EH(-1,"Need 5 parameters for 2D fillet geometry bc!\n");
+
+  xpt=p[0];
+  ypt=p[1];
+  theta1=p[2];
+  theta2=p[3];
+  rad=p[4];
+
+  alpha = 0.5*(theta2-theta1);
+  xcen = xpt + (rad/sin(alpha))*cos(theta1+alpha);
+  ycen = ypt + (rad/sin(alpha))*sin(theta1+alpha);
+
+  /**   compute angle of point on curve from arc center **/
+
+  theta = atan2(fv->x[1]-ycen,fv->x[0]-xcen);
+  theta = theta > theta2-1.5*M_PIE ? theta : theta + 2*M_PIE;
+
+  /**  use different f depending on theta  **/
+
+  if( (theta1-0.5*M_PIE) <= theta && theta <= (theta1+alpha))
+     {
+      *func = (fv->x[1]-ypt)*cos(theta1) - (fv->x[0]-xpt)*sin(theta1);
+      d_func[MESH_DISPLACEMENT1] =  -sin(theta1);
+      d_func[MESH_DISPLACEMENT2] =  cos(theta1);
+
+     }
+  else if ( (theta1+alpha) <= theta && (theta - 0.5*M_PIE) <= theta2)
+     {
+      *func = (fv->x[1]-ypt)*cos(theta2) - (fv->x[0]-xpt)*sin(theta2);
+      d_func[MESH_DISPLACEMENT1] = -sin(theta2);
+      d_func[MESH_DISPLACEMENT2] = cos(theta2);
+
+     }
+  else
+     {
+      *func = SQUARE(fv->x[0]-xcen)+SQUARE(fv->x[1]-ycen)-SQUARE(rad);
+      d_func[MESH_DISPLACEMENT1] = 2.*(fv->x[0]-xcen);
+      d_func[MESH_DISPLACEMENT2] = 2.*(fv->x[1]-ycen);
+
+     }
+
+  if(ielem_dim == 3)
+      d_func[MESH_DISPLACEMENT3] = 0.0;
+
+} /* END of routine f_fillet                                                   */
+/*****************************************************************************/
+
 #ifdef USE_CGM
 void 
 sm_fplane (int ielem_dim,
@@ -768,6 +847,121 @@ fvelocity_profile (int var_flag,
   *func -= fv->v[var_flag-VELOCITY1];
   
 } /* END of routine fvelocity_profile                                        */
+/*****************************************************************************/
+
+void 
+fvelocity_parabola (const int var_flag,
+        const int ielem_dim,
+        const int velo_condition,
+        double *func,
+        double d_func[],       /* defined [MAX_VARIABLE_TYPES + MAX_CONC] */
+        const double p[],      /* parameters passed in from the input deck*/
+        const double time,           /* time at which bc's are evaluated   */
+        const int num_const)           /* number of passed parameters   */
+{
+/*    parabolic velocity profile
+ *      p[0] = coordinate1
+ *      p[1] = coordinate2
+ *      p[2] = flow in positive coordinate direction
+ */
+double coord1, coord2, qflow, gap, pre_factor, temp, expon, time_factor;
+double pl_index=1.0;
+int i;
+	coord1 = p[0];
+	coord2 = p[1];
+	qflow = p[2];
+	gap = fabs(coord2-coord1);
+	pre_factor = 6.*qflow/(gap*gap*gap);
+
+  if(ielem_dim > 2)
+     {
+      EH(-1,"Velo parabola not ready for 3D yet!\n");
+      return;
+     }
+  for(i=0;i<ielem_dim;i++)
+     {
+      d_func[MESH_DISPLACEMENT1+i] = 0.0;
+     }
+
+  if(af->Assemble_LSA_Mass_Matrix)
+    d_func[var_flag] = 0.0;
+  else
+    d_func[var_flag] = -1.0;
+
+
+  if( gap > DBL_SMALL)
+  {
+    if(num_const == 3 || p[3] == 1.0)   /*  Newtonian solution   */
+      {
+       if( velo_condition == U_PARABOLA_BC)
+         {
+          *func = pre_factor*(fv->x[1]-coord1)*(coord2-fv->x[1]);
+          if( pd->e[R_MESH1] )
+             {
+              d_func[MESH_DISPLACEMENT2] = pre_factor*(coord1+coord2-2.*fv->x[1]);
+             }
+         }
+       else if ( velo_condition == V_PARABOLA_BC )
+        {
+	 *func = pre_factor*(fv->x[0]-coord1)*(coord2-fv->x[0]);
+          if( pd->e[R_MESH1] )
+            {
+             d_func[MESH_DISPLACEMENT1] = pre_factor*(coord1+coord2-2.*fv->x[0]);
+            }
+        }
+       else {   *func =0.; }
+     }
+    else if(num_const > 3 )   /*  Power-law  solution   */
+      {
+        if(p[3] < 0.0)
+            {pl_index = gn->nexp;}
+        else
+            {pl_index = p[3];}
+        expon = 2.+1./pl_index;
+	pre_factor = (2.*pl_index+1.)/(pl_index +1.)*qflow/pow(gap,expon);
+        expon = 1.+1./pl_index;
+        temp = 2*fv->x[1]-coord1-coord2;
+       if( velo_condition == U_PARABOLA_BC)
+         {
+          temp = 2*fv->x[1]-coord1-coord2;
+          *func = pre_factor*(pow(gap,expon) - pow(fabs(temp),expon));
+          if( pd->e[R_MESH1] )
+             {
+              d_func[MESH_DISPLACEMENT2] = pre_factor*(-2.*SGN(temp)*expon*pow(fabs(temp),1./pl_index));
+             }
+         }
+       else if ( velo_condition == V_PARABOLA_BC )
+        {
+          temp = 2*fv->x[0]-coord1-coord2;
+          *func = pre_factor*(pow(gap,expon) - pow(fabs(temp),expon));
+          if( pd->e[R_MESH1] )
+            {
+              d_func[MESH_DISPLACEMENT1] = pre_factor*(-2.*SGN(temp)*expon*pow(fabs(temp),1./pl_index));
+            }
+        }
+       else {   *func =0.; }
+     }
+  }  else   {
+       *func = 0.0;
+  }
+/*  Add sinusoidal time-varying pieces   */
+  if(num_const > 3 && num_const % 3 == 1)
+     {
+      time_factor = 0.;
+      for(i=4 ; i<num_const ; i=i+3)
+         {
+          time_factor += p[i]*sin(p[i+1]*time + p[i+2]);
+         }
+      *func *= (1.0 + time_factor);
+      for(i=0;i<ielem_dim;i++)
+         {
+          d_func[MESH_DISPLACEMENT1+i] *= (1.0 + time_factor);
+         }
+     }
+
+  *func -= fv->v[var_flag-VELOCITY1];
+  
+} /* END of routine fvelocity_parabola                                        */
 /*****************************************************************************/
 
 void

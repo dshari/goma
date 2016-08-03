@@ -71,6 +71,13 @@ PROTO((const int ,		/* ielem_dim */
        double [],		/* d_func - dimensioned [MAX_VARIABLE_TYPES+MAX_CONC] */
        dbl *));		/* aa - function parameters from data card  */
 
+EXTERN void f_fillet
+PROTO((const int ,		/* ielem_dim */
+       double *,		/* func */
+       double [],		/* d_func - dimensioned [MAX_VARIABLE_TYPES+MAX_CONC] */
+       const double *,		/* p - function parameters from data card  */
+       const int ));		/* number of parameters from bc card  */
+
 #ifdef USE_CGM
 EXTERN void sm_fplane
 PROTO((const int ,		/* ielem_dim */
@@ -87,6 +94,16 @@ PROTO((const int ,		/* var_flag */
        double [],		/* d_func - [MAX_VARIABLE_TYPES + MAX_CONC] */
        double [],		/* p - parameters passed in thru input deck */
        const double ));		/* time - time at which BC's are evaluated  */
+
+EXTERN void fvelocity_parabola
+PROTO((const int ,		/* var_flag */
+       const int ,		/* ielem_dim */
+       const int ,		/* velo_condition */
+       double *,		/* func */
+       double [],		/* d_func - [MAX_VARIABLE_TYPES + MAX_CONC] */
+       const double [],		/* p - parameters passed in thru input deck */
+       const double ,		/* time - time at which BC's are evaluated  */
+       const int ));		/* number of parameters */
 
 EXTERN void fspline
 PROTO((const int ,		/* ielem_dim */
