@@ -4373,7 +4373,18 @@ calculate_lub_q_v (
       memset(D_GRADH_DH,  0.0, sizeof(double)*DIM);
       
       /* Extract film thickness */
-      H = fv->sh_fh;
+      if(mp->HeightLFunctionModel == GRAD_FLAT_GRAD || mp->HeightLFunctionModel == CONSTANT_SPEED)
+	{
+	  // Extract wall heights if turned on
+	  dbl H_U, dH_U_dtime, H_L, dH_L_dtime;
+	  dbl dH_U_dX[DIM],dH_L_dX[DIM], dH_U_dp, dH_U_ddh;
+	  H = height_function_model(&H_U, &dH_U_dtime, &H_L, &dH_L_dtime, dH_U_dX, dH_L_dX, &dH_U_dp, &dH_U_ddh, time, dt);
+	  H += fv->sh_fh;
+	}
+      else
+	{
+	  H = fv->sh_fh;
+	}
       
       /* Perfrom I - nn gradient */
       Inn(fv->grad_sh_fh, GRADH);
