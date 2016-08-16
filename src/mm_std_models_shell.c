@@ -623,146 +623,148 @@ height_function_model (double *H_U,
 
      dH_U_dX[2] = 0.;
    }
-    else if (mp->HeightLFunctionModel == GRAD_FLAT_GRAD)
-     {
-       // Read in parameters
-       dbl x1 = mp->u_heightL_function_constants[0];
-       dbl x2 = mp->u_heightL_function_constants[1];
-       dbl h0 = mp->u_heightL_function_constants[2];
-       dbl h1 = mp->u_heightL_function_constants[3];
-       dbl hmax = mp->u_heightL_function_constants[4];
-       dbl w1 = mp->u_heightL_function_constants[5];
-       dbl w2 = mp->u_heightL_function_constants[6];
-       
-       //  Doesn't look like we are doing surface roughness anytime soon
-       //dbl sr = mp->u_heightU_function_constants[7];
-       //dbl WL = mp->u_heightU_function_constants[8];
-       
-       dbl z0 = mp->u_heightL_function_constants[7];
-       dbl t0 = mp->u_heightL_function_constants[8];
-       dbl wf = mp->u_heightL_function_constants[9];
-       dbl df = mp->u_heightL_function_constants[10];
-
-       dbl x = fv->x[0];
-       dbl z = fv->x[2];
-       //Use undeformed coordinates
-       dbl x0 = fv->x0[0];
-
-       //Set polynomial coefficients
-       dbl a2 = 0.0;
-       // Check for linear section
-       if(x2-w2-x1-w1)
-	 {
-	   a2 = -(h1-h0)/(x2-w2-x1-w1);
-	 }
-       dbl b2 = -h0 + a2*(x1+w1);
-
-       dbl a1 = 0.0;
-       // Check for left parabola
-       if(w1)
-	 {
-	   a1 = -(hmax-h0+a2*w1) / (w1*w1);
-	 }	 
-       dbl b1 = -a2 + 2.0*a1*(x1+w1);
-       dbl c1 = -h0 + a2*(x1+w1) + a1*(x1+w1)*(x1+w1);
-
-       dbl a3 = 0.0;
-       // Check for right parabola
-       if(w2)
-	 {
-	   a3 = -(hmax-h1-a2*w2) / (w2*w2);
-	 }
-       dbl b3 = -a2 + 2.0*a3*(x2-w2);
-       dbl c3 = -h1 + a2*(x2-w2) + a3*(x2-w2)*(x2-w2);
-       /*
-       // Left parabola
-       if(x0 <= x1+w1)
-	 {	   
-	   *H_U = a1*x0*x0 + b1*x0 + c1;
-	   dH_U_dX[0] = 2*a1*x0 + b1;   
-	 }
-       // Right parabola
-       else if(x0 >= x2-w2)
-	 {
-	   *H_U = a3*x0*x0 + b3*x0 + c3;
-	   dH_U_dX[0] = 2*a3*x0 + b3;
-	 }
-       // Middle line
-       else
-	 {	   
-	   *H_U = a2*x0 + b2;
-	   dH_U_dX[0] = a2;
-	 }
-       
-       // Check for surface roughness
-       if(WL)
-	 {
-	   *H_U += sr*sin(2*PI*x0/WL);
-	   dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x0/WL);
-	 }
-       */
-       // Left parabola
-       if(x <= x1+w1)
-	 {	   
-	   *H_L = a1*x*x + b1*x + c1;
-	   dH_L_dX[0] = 2*a1*x + b1;   
-	 }
-       // Right parabola
-       else if(x >= x2-w2)
-	 {
-	   *H_L = a3*x*x + b3*x + c3;
-	   dH_L_dX[0] = 2*a3*x + b3;
-	 }
-       // Middle line
-       else
-	 {	   
-	   *H_L = a2*x + b2;
-	   dH_L_dX[0] = a2;
-	 }
-
-       dH_L_dX[1]  = 0.0;
-       dH_L_dX[2]  = 0.0;
-       *dH_L_dtime = 0.0;
-
-       //Add feature perturbation if present
-       if(wf>0)
-	 {
-	   dbl Vw = mp->veloL[0];
-	   dbl xf1 = x1+(time-t0)*Vw;
-	   //dbl xf1 = (x1+x2)/2.0;   // For debugging purposes, need feature to be part of domain
-	   dbl xf2 = xf1-wf;
-	   dbl zf1 = z0+wf/2.0;
-	   dbl zf2 = z0-wf/2.0;
-	   
-	   //Trench feature
-	   
-	   if(x<xf1 && x>xf2)
-	     {
-	       if(z<zf1 && z>zf2)
-		 {
-		   *H_L -= df;
-		 }
-	     }
-
-	     /*
-
-	   //Smoothed feature, Just tanh for now, we can fine-tune it later
-	   *H_U += df/2.0*(tanh(x-xf2)-tanh(x-xf1));
-	   dH_U_dX[0] += df/2.0*(1.0/(cosh(x-xf2)*cosh(x-xf2)) - 1.0/(cosh(x-xf1)*cosh(x-xf1)));
-	   *dH_U_dtime -= Vw*df/2.0*(1.0/(cosh(x-xf2)*cosh(x-xf2)) - 1.0/(cosh(x-xf1)*cosh(x-xf1)));
-	   */
-	 }
-       
-       /*
-       // Check for surface roughness
-       if(WL)
-	 {
-	   *H_U += sr*sin(2*PI*x/WL);
-	   dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x/WL);
-	 }
-       */
-
+ else if (mp->HeightLFunctionModel == GRAD_FLAT_GRAD)
+   {
+     // Read in parameters
+     dbl x1 = mp->u_heightL_function_constants[0];
+     dbl x2 = mp->u_heightL_function_constants[1];
+     dbl h0 = mp->u_heightL_function_constants[2];
+     dbl h1 = mp->u_heightL_function_constants[3];
+     dbl hmax = mp->u_heightL_function_constants[4];
+     dbl w1 = mp->u_heightL_function_constants[5];
+     dbl w2 = mp->u_heightL_function_constants[6];
+     
+     //  Doesn't look like we are doing surface roughness anytime soon
+     //dbl sr = mp->u_heightU_function_constants[7];
+     //dbl WL = mp->u_heightU_function_constants[8];
+     
+     dbl z0 = mp->u_heightL_function_constants[7];
+     dbl t0 = mp->u_heightL_function_constants[8];
+     dbl wf = mp->u_heightL_function_constants[9];
+     dbl df = mp->u_heightL_function_constants[10];
+     
+     dbl x = fv->x[0];
+     dbl z = fv->x[2];
+     //Use undeformed coordinates
+     dbl x0 = fv->x0[0];
+     
+     //Set polynomial coefficients
+     dbl a2 = 0.0;
+     // Check for linear section
+     if(x2-w2-x1-w1)
+       {
+	 a2 = -(h1-h0)/(x2-w2-x1-w1);
+       }
+     dbl b2 = -h0 + a2*(x1+w1);
+     
+     dbl a1 = 0.0;
+     // Check for left parabola
+     if(w1)
+       {
+	 a1 = -(hmax-h0+a2*w1) / (w1*w1);
+       }	 
+     dbl b1 = -a2 + 2.0*a1*(x1+w1);
+     dbl c1 = -h0 + a2*(x1+w1) + a1*(x1+w1)*(x1+w1);
+     
+     dbl a3 = 0.0;
+     // Check for right parabola
+     if(w2)
+       {
+	 a3 = -(hmax-h1-a2*w2) / (w2*w2);
+       }
+     dbl b3 = -a2 + 2.0*a3*(x2-w2);
+     dbl c3 = -h1 + a2*(x2-w2) + a3*(x2-w2)*(x2-w2);
+     /*
+     // Left parabola
+     if(x0 <= x1+w1)
+     {	   
+     *H_U = a1*x0*x0 + b1*x0 + c1;
+     dH_U_dX[0] = 2*a1*x0 + b1;   
      }
+     // Right parabola
+     else if(x0 >= x2-w2)
+     {
+     *H_U = a3*x0*x0 + b3*x0 + c3;
+     dH_U_dX[0] = 2*a3*x0 + b3;
+     }
+     // Middle line
+     else
+     {	   
+     *H_U = a2*x0 + b2;
+     dH_U_dX[0] = a2;
+     }
+     
+     // Check for surface roughness
+     if(WL)
+     {
+     *H_U += sr*sin(2*PI*x0/WL);
+     dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x0/WL);
+     }
+     */
+     *H_L = 0.0;
+     dH_L_dX[0]  = 0.0;
+     // Left parabola
+     if(x <= x1+w1)
+       {	   
+	 *H_L = a1*x*x + b1*x + c1;
+	 dH_L_dX[0] = 2*a1*x + b1;   
+       }
+     // Right parabola
+     else if(x >= x2-w2)
+       {
+	 *H_L = a3*x*x + b3*x + c3;
+	 dH_L_dX[0] = 2*a3*x + b3;
+       }
+     // Middle line
+     else
+       {	   
+	 *H_L = a2*x + b2;
+	 dH_L_dX[0] = a2;
+       }
+     
+     dH_L_dX[1]  = 0.0;
+     dH_L_dX[2]  = 0.0;
+     *dH_L_dtime = 0.0;
+     
+     //Add feature perturbation if present
+     if(wf>0)
+       {
+	 dbl Vw = mp->veloL[0];
+	 dbl xf1 = x1+(time-t0)*Vw;
+	 //dbl xf1 = (x1+x2)/2.0;   // For debugging purposes, need feature to be part of domain
+	 dbl xf2 = xf1-wf;
+	 dbl zf1 = z0+wf/2.0;
+	 dbl zf2 = z0-wf/2.0;
+	 
+	 //Trench feature
+	 
+	 if(x<xf1 && x>xf2)
+	   {
+	     if(z<zf1 && z>zf2)
+	       {
+		 *H_L -= df;
+	       }
+	   }
+	 
+	 /*
+	   
+	 //Smoothed feature, Just tanh for now, we can fine-tune it later
+	 *H_U += df/2.0*(tanh(x-xf2)-tanh(x-xf1));
+	 dH_U_dX[0] += df/2.0*(1.0/(cosh(x-xf2)*cosh(x-xf2)) - 1.0/(cosh(x-xf1)*cosh(x-xf1)));
+	 *dH_U_dtime -= Vw*df/2.0*(1.0/(cosh(x-xf2)*cosh(x-xf2)) - 1.0/(cosh(x-xf1)*cosh(x-xf1)));
+	 */
+       }
+     
+     /*
+     // Check for surface roughness
+     if(WL)
+     {
+     *H_U += sr*sin(2*PI*x/WL);
+     dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x/WL);
+     }
+     */
+     
+   }
 
  else if(mp->HeightLFunctionModel == TABLE) {
    struct  Data_Table *table_local;
