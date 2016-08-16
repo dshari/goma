@@ -653,27 +653,27 @@ height_function_model (double *H_U,
        // Check for linear section
        if(x2-w2-x1-w1)
 	 {
-	   a2 = (h1-h0)/(x2-w2-x1-w1);
+	   a2 = -(h1-h0)/(x2-w2-x1-w1);
 	 }
-       dbl b2 = h0 - a2*(x1+w1);
+       dbl b2 = -h0 + a2*(x1+w1);
 
        dbl a1 = 0.0;
        // Check for left parabola
        if(w1)
 	 {
-	   a1 = (hmax-h0+a2*w1) / (w1*w1);
+	   a1 = -(hmax-h0+a2*w1) / (w1*w1);
 	 }	 
-       dbl b1 = a2 - 2.0*a1*(x1+w1);
-       dbl c1 = h0 - a2*(x1+w1) + a1*(x1+w1)*(x1+w1);
+       dbl b1 = -a2 + 2.0*a1*(x1+w1);
+       dbl c1 = -h0 + a2*(x1+w1) + a1*(x1+w1)*(x1+w1);
 
        dbl a3 = 0.0;
        // Check for right parabola
        if(w2)
 	 {
-	   a3 = (hmax-h1-a2*w2) / (w2*w2);
+	   a3 = -(hmax-h1-a2*w2) / (w2*w2);
 	 }
-       dbl b3 = a2 - 2.0*a3*(x2-w2);
-       dbl c3 = h1 - a2*(x2-w2) + a3*(x2-w2)*(x2-w2);
+       dbl b3 = -a2 + 2.0*a3*(x2-w2);
+       dbl c3 = -h1 + a2*(x2-w2) + a3*(x2-w2)*(x2-w2);
        /*
        // Left parabola
        if(x0 <= x1+w1)
@@ -704,27 +704,27 @@ height_function_model (double *H_U,
        // Left parabola
        if(x <= x1+w1)
 	 {	   
-	   *H_U = a1*x*x + b1*x + c1;
-	   dH_U_dX[0] = 2*a1*x + b1;   
+	   *H_L = a1*x*x + b1*x + c1;
+	   dH_L_dX[0] = 2*a1*x + b1;   
 	 }
        // Right parabola
        else if(x >= x2-w2)
 	 {
-	   *H_U = a3*x*x + b3*x + c3;
-	   dH_U_dX[0] = 2*a3*x + b3;
+	   *H_L = a3*x*x + b3*x + c3;
+	   dH_L_dX[0] = 2*a3*x + b3;
 	 }
        // Middle line
        else
 	 {	   
-	   *H_U = a2*x + b2;
-	   dH_U_dX[0] = a2;
+	   *H_L = a2*x + b2;
+	   dH_L_dX[0] = a2;
 	 }
 
-       dH_U_dX[1]  = 0.0;
-       dH_U_dX[2]  = 0.0;
-       *dH_U_dp    = 0.0;
-       *dH_U_ddh = 0.0;       
-       *dH_U_dtime = 0.0;
+       dH_L_dX[1]  = 0.0;
+       dH_L_dX[2]  = 0.0;
+       *dH_L_dp    = 0.0;
+       *dH_L_ddh = 0.0;       
+       *dH_L_dtime = 0.0;
 
        //Add feature perturbation if present
        if(wf>0)
@@ -742,7 +742,7 @@ height_function_model (double *H_U,
 	     {
 	       if(z<zf1 && z>zf2)
 		 {
-		   *H_U += df;
+		   *H_L -= df;
 		 }
 	     }
 
