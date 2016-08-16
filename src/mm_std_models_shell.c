@@ -394,7 +394,7 @@ height_function_model (double *H_U,
 	   *H_U += sr*sin(2*PI*x0/WL);
 	   dH_U_dX[0] += sr*2*PI/WL*cos(2*PI*x0/WL);
 	 }
-       */
+       
        // Left parabola
        if(x <= x1+w1)
 	 {	   
@@ -413,7 +413,8 @@ height_function_model (double *H_U,
 	   *H_U = a2*x + b2;
 	   dH_U_dX[0] = a2;
 	 }
-
+       */
+       
        dH_U_dX[1]  = 0.0;
        dH_U_dX[2]  = 0.0;
        *dH_U_dp    = 0.0;
