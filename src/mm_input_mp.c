@@ -8842,6 +8842,58 @@ ECHO("\n----Acoustic Properties\n", echo_file);
 
       ECHO(es,echo_file);
 
+      
+
+      model_read = look_for_mat_prop(imp, "Upper Height Function Constants", 
+				     &(mat_ptr->HeightUFunctionModel), 
+				     &(mat_ptr->heightU), 
+				     NO_USER, NULL, model_name, 
+				     SCALAR_INPUT, &NO_SPECIES,es);
+      
+      mat_ptr->heightU_ext_field_index = -1; //Default to NO external field 
+
+      //For now, we will only enable CONSTANT, s.t. the height_function_model has something to read
+      if ( model_read == -1 && !strcmp(model_name, "CONSTANT_SPEED") )  
+	{
+	  model_read = 1;
+	  mat_ptr->HeightUFunctionModel = CONSTANT_SPEED;
+	  num_const = read_constants(imp, &(mat_ptr->u_heightU_function_constants), NO_SPECIES);
+	  if( num_const < 2)
+	    {
+	      sr = sprintf(err_msg, 
+			   "Matl %s needs at least 2 constants for %s %s model.\n",
+			   pd_glob[mn]->MaterialName,
+			   "Upper Height Function", "CONSTANT_SPEED");
+	      EH(-1, err_msg);
+	    }
+
+	  if (num_const > 2)
+	    {
+	      /* We may have an external field "height" we will be adding to this model.  Check
+	       * for it now and flag its existence through the material properties structure 
+	       */
+	      mat_ptr->heightU_ext_field_index = -1; //Default to NO external field 
+	      if ( efv->ev )
+		{
+		  for (i = 0; i < efv->Num_external_field; i++)
+		    {
+		      if(!strcmp(efv->name[i], "HEIGHT"))
+			{
+			  mat_ptr->heightU_ext_field_index = i;
+			}
+		    }
+		}
+	      else
+		{
+		  EH(-1," You have a third float on Upper Height Function Constants card, but NO external field");
+		}
+	    }
+
+	  mat_ptr->len_u_heightU_function_constants = num_const;
+	  SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightU_function_constants);
+
+	}
+
       // For now, we will only enable CONSTANT and GRAD_FLAT_GRAD for the gravure
       model_read = look_for_mat_proptable(imp, "Lower Height Function Constants" , 
               &(mat_ptr->HeightLFunctionModel), 
@@ -8901,17 +8953,18 @@ ECHO("\n----Acoustic Properties\n", echo_file);
 	      sr = sprintf(err_msg, 
 			   "Matl %s needs 8 constants for %s %s model.\n",
 			   pd_glob[mn]->MaterialName,
-			   "Upper Height Function", "GRAD_FLAT_GRAD");
+			   "Lower Height Function", "GRAD_FLAT_GRAD");
 	      EH(-1, err_msg);
 	    }
 	  mat_ptr->len_u_heightL_function_constants = num_const;
 	  SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightL_function_constants);
 	}
-      
+      /* 
       else  if(model_read == -1)
 	{
 	  EH(model_read, "Lower Height Function model invalid");
 	}
+      */
       ECHO(es,echo_file);
 
       

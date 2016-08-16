@@ -722,8 +722,6 @@ height_function_model (double *H_U,
 
        dH_L_dX[1]  = 0.0;
        dH_L_dX[2]  = 0.0;
-       *dH_L_dp    = 0.0;
-       *dH_L_ddh = 0.0;       
        *dH_L_dtime = 0.0;
 
        //Add feature perturbation if present
