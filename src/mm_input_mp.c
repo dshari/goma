@@ -8840,8 +8840,81 @@ ECHO("\n----Acoustic Properties\n", echo_file);
 	  EH(model_read, "Film Evaporation Model invalid");
 	}
 
-      ECHO(es,echo_file);  
+      ECHO(es,echo_file);
 
+      // For now, we will only enable CONSTANT and GRAD_FLAT_GRAD for the gravure
+      model_read = look_for_mat_proptable(imp, "Lower Height Function Constants" , 
+              &(mat_ptr->HeightLFunctionModel), 
+              &(mat_ptr->heightL), 
+              &(mat_ptr->u_heightL_function_constants),
+              &(mat_ptr->len_u_heightL_function_constants),
+              &(mat_ptr->heightL_function_constants_tableid),
+              model_name, SCALAR_INPUT, &NO_SPECIES,es);
+
+      mat_ptr->heightL_ext_field_index = -1; //Default to NO external field 
+
+      if ( model_read == -1 && !strcmp(model_name, "CONSTANT_SPEED") )  
+	{
+	  model_read = 1;
+	  mat_ptr->HeightLFunctionModel = CONSTANT_SPEED;
+	  num_const = read_constants(imp, &(mat_ptr->u_heightL_function_constants), NO_SPECIES);
+	  if( num_const < 2)
+	    {
+	      sr = sprintf(err_msg, 
+			   "Matl %s needs at least 2 constants for %s %s model.\n",
+			   pd_glob[mn]->MaterialName,
+			   "Lower Height Function", "CONSTANT_SPEED");
+	      EH(-1, err_msg);
+	    }
+	  if (num_const > 2)
+	    {
+	      /* We may have an external field "height" we will be adding to this model.  Check
+	       * for it now and flag its existence through the material properties structure 
+	       */
+	      mat_ptr->heightL_ext_field_index = -1; //Default to NO external field 
+	      if ( efv->ev )
+		{
+		  for (i = 0; i < efv->Num_external_field; i++)
+		    {
+		      if(!strcmp(efv->name[i], "HEIGHT_L"))
+			{
+			  mat_ptr->heightL_ext_field_index = i;
+			}
+		    }
+		}
+	      else
+		{
+		  EH(-1," You have a third float on Upper Height Function Constants card, but NO external field");
+		}
+	    }
+	  mat_ptr->len_u_heightL_function_constants = num_const;
+	  SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightL_function_constants);
+	}
+
+      else if(model_read == -1 && !strcmp(model_name, "GRAD_FLAT_GRAD"))  
+	{
+	  model_read = 1;
+	  mat_ptr->HeightLFunctionModel = GRAD_FLAT_GRAD;
+	  num_const = read_constants(imp, &(mat_ptr->u_heightL_function_constants), NO_SPECIES);
+	  if( num_const < 8)
+	    {
+	      sr = sprintf(err_msg, 
+			   "Matl %s needs 8 constants for %s %s model.\n",
+			   pd_glob[mn]->MaterialName,
+			   "Upper Height Function", "GRAD_FLAT_GRAD");
+	      EH(-1, err_msg);
+	    }
+	  mat_ptr->len_u_heightL_function_constants = num_const;
+	  SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightL_function_constants);
+	}
+      
+      else  if(model_read == -1)
+	{
+	  EH(model_read, "Lower Height Function model invalid");
+	}
+      ECHO(es,echo_file);
+
+      
 
       model_read = look_for_mat_prop(imp, "Upper Velocity Function Constants", 
 				     &(mat_ptr->VeloUFunctionModel), 
