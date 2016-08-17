@@ -678,6 +678,7 @@ height_function_model (double *H_U,
 
      *H_L = 0.0;
      dH_L_dX[0]  = 0.0;
+     /*
      // Left parabola
      if(x <= x1+w1 && x>=x1)
        {	   
@@ -685,18 +686,18 @@ height_function_model (double *H_U,
 	 dH_L_dX[0] = 2*a1*x + b1;   
        }
      // Right parabola
-     else if(x >= x2-w2 && x<=x2)
+     else if(x >= x2-w2 && x<x2)
        {
 	 *H_L = a3*x*x + b3*x + c3;
 	 dH_L_dX[0] = 2*a3*x + b3;
        }
      // Middle line
-     else if(x>=x1+w1 && x<=x2-w2)
+     else if(x>x1+w1 && x<x2-w2)
        {	   
 	 *H_L = a2*x + b2;
 	 dH_L_dX[0] = a2;
        }
-
+     */
      dH_L_dX[1]  = 0.0;
      dH_L_dX[2]  = 0.0;
      *dH_L_dtime = 0.0;

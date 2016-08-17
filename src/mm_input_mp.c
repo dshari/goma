@@ -8893,6 +8893,7 @@ ECHO("\n----Acoustic Properties\n", echo_file);
 	  SPF_DBL_VEC( endofstring(es), num_const, mat_ptr->u_heightU_function_constants);
 
 	}
+      ECHO(es,echo_file);
 
       // For now, we will only enable CONSTANT and GRAD_FLAT_GRAD for the gravure
       model_read = look_for_mat_proptable(imp, "Lower Height Function Constants" , 
