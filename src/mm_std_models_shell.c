@@ -338,7 +338,7 @@ height_function_model (double *H_U,
        dbl df = mp->u_heightU_function_constants[10];
 
        dbl x = fv->x[0];
-       dbl z = fv->x[2];
+       dbl z = fv->x[1];
        //Use undeformed coordinates
        dbl x0 = fv->x0[0];
 
@@ -645,7 +645,7 @@ height_function_model (double *H_U,
      dbl df = mp->u_heightL_function_constants[10];
      
      dbl x = fv->x[0];
-     dbl z = fv->x[2];
+     dbl z = fv->x[1];
      //Use undeformed coordinates
      dbl x0 = fv->x0[0];
      
