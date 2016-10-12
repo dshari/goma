@@ -435,10 +435,13 @@ height_function_model (double *H_U,
 	   
 	   if(x<xf1 && x>xf2)
 	     {
+	       /*
 	       if(z<zf1 && z>zf2)
 		 {
 		   *H_U += df;
 		 }
+	       */
+	       *H_U += df;
 	     }
 
 	     /*
@@ -716,10 +719,13 @@ height_function_model (double *H_U,
 	 
 	 if(x<xf1 && x>xf2)
 	   {
+	     /*
 	     if(z<zf1 && z>zf2)
 	       {
 		 *H_L -= df;
-	       }
+	       }	     
+	     */
+	     *H_L -= df;
 	   }
 	 
 	 /*
