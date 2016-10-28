@@ -122,6 +122,11 @@ EXTERN int thermal_viscosity	/* mm_viscosity.c                            */
 PROTO((dbl ,			/* mu0 - ref temperature fluid viscosity     */
        dbl ));			/* Aexp - exponent for constitutive equation */
 
+EXTERN int myega_viscosity	/* mm_viscosity.c                            */
+PROTO((dbl ,			/* mu0 - ref temperature fluid viscosity     */
+       dbl ,                    /* Aexp - exponent for constitutive equation */
+       dbl ));			/* m - exponent for constitutive equation */
+
 EXTERN int bond_viscosity
 PROTO((dbl ,          /* reference zero shear rate fluid viscosity */
        dbl ,          /* reference high shear rate fluid viscosity */

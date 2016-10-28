@@ -229,7 +229,7 @@ extern int Num_Var_Init_Mat[MAX_NUMBER_MATLS];	/* number of variables to overwri
 #define BINGHAM_WLF    27         /* Bingham WLF viscosity model */
 #define SYLGARD    28         /* Sylgard viscosity model */
 #define PRANDTL_MIXING 29     /* Shell Turbulent Viscosity Model */
-
+#define MYEGA 30
 
 
 /*

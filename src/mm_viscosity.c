@@ -464,6 +464,55 @@ viscosity(struct Generalized_Newtonian *gn_local,
 	    }
 	}
     }
+  else if (gn_local->ConstitutiveEquation == MYEGA)
+    {
+      double mu0, atexp, m;
+      mu0=gn_local->mu0; 
+      atexp= gn_local->atexp; 
+      m = gn_local->nexp;
+      if(gn_local->mu0Model == LEVEL_SET)
+	{
+	  if(d_mu != NULL)
+	    {
+	      err = level_set_property(gn_local->u_mu0[0], gn_local->u_mu0[1], 
+				       gn_local->u_mu0[2], &mu0, d_mu->F);
+	    }
+	  else
+	    {
+	      err = level_set_property(gn_local->u_mu0[0], gn_local->u_mu0[1], 
+				       gn_local->u_mu0[2], &mu0, NULL);
+	    }
+	}
+      
+      if(gn_local->atexpModel == LEVEL_SET)
+	{
+	  if(d_mu != NULL)
+	    {
+	      err = level_set_property(gn_local->u_atexp[0], gn_local->u_atexp[1], 
+				       gn_local->u_atexp[2], &atexp, d_mu->F);
+	    }
+	  else
+	    {
+	      err = level_set_property(gn_local->u_atexp[0], gn_local->u_atexp[1], 
+				       gn_local->u_atexp[2], &atexp, NULL);
+	    }
+	}
+	    
+      err = myega_viscosity(mu0, atexp, m);
+      EH(err, "myega_viscosity");
+      
+      mu = mp->viscosity;
+      
+      var = TEMPERATURE;
+      if ( d_mu != NULL && pd->v[TEMPERATURE] )
+	
+	{
+	  for ( j=0; j<ei->dof[var]; j++)
+	    {
+	      d_mu->T[j]= mp->d_viscosity[var]*bf[var]->phi[j];
+	    }
+	}
+    }
   else if (gn_local->ConstitutiveEquation == BOND)
     {
       err = bond_viscosity(gn_local->mu0, gn_local->muinf, gn_local->aexp);
@@ -2942,6 +2991,52 @@ thermal_viscosity(dbl mu0,	/* reference temperature fluid viscosity */
 
   return(status);
 } /* end of thermal_viscosity */
+
+
+/*
+ * MYEGA viscosity model for molten glass
+ * DSH 04/2016
+ */
+int
+myega_viscosity(dbl mu0,     // Reference Viscosity
+		dbl Aexp,    // Temperature Exponenet
+		dbl m)       // Fragility
+{
+  dbl mu, e1, e2;  // Viscosity and some convenient exponents
+  dbl T, t;        // Temperature and time
+  int status = 1;  
+
+                                        
+  if(pd->e[TEMPERATURE])
+    {
+      T = fv->T;
+    }
+  else
+    {
+      T = upd->Process_Temperature;
+      t = tran->time_value;
+      T += 25.0*t/60.0;
+      if(T>= 960.0)
+	{
+	  T = 960.0;
+	}
+    }
+  
+  e1 = (m/(12-log10(mu0))-1.0)*(Aexp/T-1.0);
+  e2 = (12-log10(mu0))*Aexp/T*exp(e1);
+
+  mu = mu0*exp(log(10.0)*e2);
+  mp->viscosity = mu;
+  
+  // Jacobian term for when T is an unknown
+  if(pd->e[TEMPERATURE])
+    {
+      mp->d_viscosity[TEMPERATURE]  = -mu*log(10.0)*(12-log10(mu0))*Aexp/(T*T);
+      mp->d_viscosity[TEMPERATURE] *= exp(e1)*(1.0+(m/(12-log10(mu0))-1.0)*Aexp/T);
+    }
+
+  return(status);
+} // myega_viscosity
 
 
 /*
