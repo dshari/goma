@@ -416,7 +416,7 @@ matrix_fill(
 			       for the species equations */
   int ielem_type_mass = -1;	/* flag to give discontinuous interpolation type */
 
-  int pspg_local = 0;
+  int pspg_local = 0, evss_gls=0;
   
   bool owner = TRUE;
 
@@ -761,22 +761,37 @@ matrix_fill(
 	element_velocity(pg_data.v_avg, pg_data.dv_dnode, exo);
       }
   }
-
-  if(Cont_GLS && pde[R_PRESSURE] && pde[R_MOMENTUM1]) 
+  
+  if(Cont_GLS && pde[R_PRESSURE] && pde[R_MOMENTUM1])
     {
-    xi[0] = 0.0;
-    xi[1] = 0.0;
-    xi[2] = 0.0;  
-    (void) load_basis_functions(xi, bfd);
-    pg_data.mu_avg = element_viscosity();
-    pg_data.rho_avg = density(NULL, time_value);
-
-    if(Cont_GLS==2)
-      {
-	h_elem_siz(pg_data.hsquared, pg_data.hhv, pg_data.dhv_dxnode, pde[R_MESH1]);
-	element_velocity(pg_data.v_avg, pg_data.dv_dnode, exo);
-      }
+      xi[0] = 0.0;
+      xi[1] = 0.0;
+      xi[2] = 0.0;  
+      (void) load_basis_functions(xi, bfd);
+      pg_data.mu_avg = element_viscosity();
+      pg_data.rho_avg = density(NULL, time_value);
+      
+      if(Cont_GLS==2)
+	{
+	  h_elem_siz(pg_data.hsquared, pg_data.hhv, pg_data.dhv_dxnode, pde[R_MESH1]);
+	  element_velocity(pg_data.v_avg, pg_data.dv_dnode, exo);
+	}
     }
+
+  if(vn!=NULL && &vn->evssModel!=NULL)
+    {
+      if(vn->evssModel==EVSS_GLS_l)
+	{
+	  evss_gls = 1;
+	}
+    }
+  
+  if(evss_gls && pde[R_STRESS11] && pde[R_MOMENTUM1])
+    {
+      h_elem_siz(pg_data.hsquared, pg_data.hhv, pg_data.dhv_dxnode, pde[R_MESH1]);
+      element_velocity(pg_data.v_avg, pg_data.dv_dnode, exo);
+    }
+
 
   if(pde[FILL] || pde[PHASE1])      /* UMR fix for non-FILL problems */
     {
@@ -1472,8 +1487,7 @@ matrix_fill(
 
       if(vn->evssModel == EVSS_F)
 	{
-	  err = assemble_stress_fortin(theta, delta_t, pg_data.hsquared,
-				       pg_data.hhv, pg_data.dhv_dxnode, pg_data.v_avg, pg_data.dv_dnode);
+	  err = assemble_stress_fortin(theta, delta_t, &pg_data);
 	  err = segregate_stress_update( x_update );
 	  EH(err, "assemble_stress_fortin");
 #ifdef CHECK_FINITE
@@ -1501,6 +1515,15 @@ matrix_fill(
 	  if (err) return -1;
 #endif
 	}
+      else if(vn->evssModel == EVSS_GLS_g || vn->evssModel == EVSS_GLS_l)
+	{
+	  err = assemble_stress_GLS(time_value, theta, delta_t, &pg_data);
+	  err = segregate_stress_update( x_update );
+	  EH(err, "assemble_stress_GLS");
+#ifdef CHECK_FINITE
+	  CHECKFINITE("assemble_stress_GLS");
+#endif	  
+	}
       
       if (pde[R_SHEAR_RATE])
 	{
@@ -1525,7 +1548,7 @@ matrix_fill(
       
       if (pde[R_GRADIENT11])
 	{
-	  err = assemble_gradient(theta, delta_t);
+	  err = assemble_gradient(time_value, theta, delta_t, &pg_data);
 	  EH(err, "assemble_gradient");
 #ifdef CHECK_FINITE
 	  err = CHECKFINITE("assemble_gradient"); 

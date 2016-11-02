@@ -2349,6 +2349,19 @@ rd_mp_specs(FILE *imp, char input[], int mn, char *echo_file)
 	{
 	  vn_glob[mn]->evssModel = EVSS_L;
 	}
+      else if ( !strcmp(model_name, "EVSS_GLS_local") )
+	{
+	  vn_glob[mn]->evssModel = EVSS_GLS_l;
+	}
+      else if ( !strcmp(model_name, "EVSS_GLS_global") )
+	{
+	  vn_glob[mn]->evssModel = EVSS_GLS_g;
+	}
+      else if ( !strcmp(model_name, "EVSS_GLS") )
+	{
+	  //Default to a local GLS implementation
+	  vn_glob[mn]->evssModel = EVSS_GLS_l;
+	}
       else
 	{
 	  if( vn_glob[mn]->ConstitutiveEquation == PTT ) 

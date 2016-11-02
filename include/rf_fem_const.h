@@ -67,6 +67,8 @@
 #define EVSS_G          1  /* Rajagopalan's formulation */
 #define EVSS_F          2  /* Fortin's formulation */
 #define EVSS_L          3  /* Level set solid-fluid formulation */
+#define EVSS_GLS_l      4  /* GLS stress formulation with local stability parameter */ 
+#define EVSS_GLS_g      5  /* GLS stress formulation with global stability parameter */
 
 /* Discontinuous Galerkin viscoelastic jacobian options */
 #define EXPLICIT_DG     1

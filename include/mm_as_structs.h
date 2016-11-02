@@ -2901,6 +2901,38 @@ struct cont_gls_dependence
 };
 typedef struct cont_gls_dependence CONT_GLS_DEPENDENCE_STRUCT;
 
+/* Struct for d_tau_stress_GLS*/
+struct tau_stress_GLS_dependence
+{
+  double v[MAX_MODES][DIM][MDE];       /* Velocity dependence */
+  double X[MAX_MODES][DIM][MDE];       /* Mesh dependence*/
+};
+typedef struct tau_stress_GLS_dependence TAU_STRESS_GLS_DEPENDENCE_STRUCT;
+
+/* Struct for d_VE_GLS_res*/
+struct VE_GLS_dependence
+{
+  double v[DIM][DIM][MAX_MODES][DIM][MDE];
+  double X[DIM][DIM][MAX_MODES][DIM][MDE];
+  double C[DIM][DIM][MAX_MODES][MAX_CONC][MDE];
+  double T[DIM][DIM][MAX_MODES][MDE];
+  double P[DIM][DIM][MAX_MODES][MDE];
+  double g[DIM][DIM][MAX_MODES][DIM][DIM][MDE];
+  double S[DIM][DIM][MAX_MODES][DIM][DIM][MDE];
+};
+typedef struct VE_GLS_dependence VE_GLS_DEPENDENCE_STRUCT;
+
+/* Struct for d_wt_stress_GLS*/
+struct wt_stress_GLS
+{
+  double v[DIM][DIM][MAX_MODES][MDE][DIM][MDE];
+  double X[DIM][DIM][MAX_MODES][MDE][DIM][MDE];
+  double C[DIM][DIM][MAX_MODES][MDE][MAX_CONC][MDE];
+  double T[DIM][DIM][MAX_MODES][MDE][MDE];
+  double P[DIM][DIM][MAX_MODES][MDE][MDE];
+  double g[DIM][DIM][MAX_MODES][MDE][DIM][DIM][MDE];
+};
+typedef struct wt_stress_GLS WT_STRESS_GLS_DEPENDENCE_STRUCT;
 
 struct Petrov_Galerkin_Data {
   double h[DIM];

@@ -1742,6 +1742,7 @@ int linear_solver_conwrap(double *x, int jac_flag, double *tmp)
   int   linear_solver_itns;     /* count cumulative linearsolver iterations */
   int   num_linear_solve_blks;  /* one pass for now */
   int   matrix_solved;          /* boolean */
+  int   evss_gls=0;             // Boolean for EVSS_GLS
 
 /* Additional values for frontal solver */
 #ifdef HAVE_FRONT
@@ -1940,9 +1941,21 @@ int linear_solver_conwrap(double *x, int jac_flag, double *tmp)
           iautopiv = 1;
           iscale = 1;   /* This routine handles resolves only! */
           scaling_max = 1.0;
+	  
+	  if(vn!=NULL && &vn->evssModel!=NULL)
+	    {
+	      if(vn->evssModel==EVSS_GLS_l || vn->evssModel==EVSS_GLS_g)
+		{
+		  evss_gls = 1;
+		}
+	    }
+
+
 
           /* get global element size and velocity norm if needed for PSPG or Cont_GLS */
-          if((PSPG && Num_Var_In_Type[PRESSURE]) || (Cont_GLS && Num_Var_In_Type[VELOCITY1]))
+          if((PSPG && Num_Var_In_Type[PRESSURE]) 
+	     || (Cont_GLS && Num_Var_In_Type[VELOCITY1])
+	     || (evss_gls && Num_Var_In_Type[POLYMER_STRESS11]))
             {
               h_elem_avg = global_h_elem_siz(x,
 					     passdown.x_old,
@@ -2218,7 +2231,9 @@ void matrix_residual_fill_conwrap(double *x, double *rhs, int matflag)
     }
 
 /* Get global element size and velocity norm if needed for PSPG or Cont_GLS */
-  if((PSPG && Num_Var_In_Type[PRESSURE]) || (Cont_GLS && Num_Var_In_Type[VELOCITY1]))
+  if((PSPG && Num_Var_In_Type[PRESSURE]) 
+     || (Cont_GLS && Num_Var_In_Type[VELOCITY1])
+     || (vn->evssModel==EVSS_GLS_g && Num_Var_In_Type[POLYMER_STRESS11]))
     {
       h_elem_avg = global_h_elem_siz(x,
 				     passdown.x_old,
@@ -2356,7 +2371,9 @@ void mass_matrix_fill_conwrap(double *x, double *rhs)
       }
 
 /* Get global element size and velocity norm if needed for PSPG or Cont_GLS */
-  if((PSPG && Num_Var_In_Type[PRESSURE]) || (Cont_GLS && Num_Var_In_Type[VELOCITY1]))
+  if((PSPG && Num_Var_In_Type[PRESSURE]) 
+     || (Cont_GLS && Num_Var_In_Type[VELOCITY1])
+     || (vn->evssModel==EVSS_GLS_g && Num_Var_In_Type[POLYMER_STRESS11]))
     {
       h_elem_avg = global_h_elem_siz(x,
                                      passdown.x_old,

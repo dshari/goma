@@ -43,14 +43,31 @@ EXTERN int assemble_stress_fortin
 PROTO((dbl ,			/* tt - parm to vary time integration from 
 				 * explicit (tt = 1) to implicit (tt = 0)    */
        dbl ,			/* dt - current time step size               */
-       dbl [DIM],		/* h - not scale factors methinks            */
-       dbl [DIM][DIM],		/* hh                                        */
-       dbl [DIM][MDE],		/* dh_dxnode                                 */
-       dbl [DIM],		/* vcent - avg element velocity, which is the
-				 * centroid velocity for Q2 and the average of
-				 * the vertices for Q1. It comes from the 
-				 * routine "element_velocity."               */
-       dbl [DIM][MDE]));	/* dvc_dnode                                 */
+       const PG_DATA *));	/* pg_data - Petrov-Galerkin data            */
+
+EXTERN int calc_VE_res_GLS
+PROTO((dbl [MAX_MODES],                     // tau - stability parameter
+       TAU_STRESS_GLS_DEPENDENCE_STRUCT *,  // d_tau - Jacobian terms for parameter
+       dbl [DIM][DIM][MAX_MODES],           // VE_GLS_res - residual terms for use in assemble_stress/momentum
+       VE_GLS_DEPENDENCE_STRUCT *,          // d_VE_GLS_res - Jacobian terms for residual
+       dbl ,                                // tt - time integration parameter
+       dbl ,                                // dt - current time step
+       const PG_DATA *));                   // pg_data - Petrov-Galerkin data
+
+EXTERN int calc_VE_wt_GLS
+PROTO((dbl [DIM][DIM][MAX_MODES][MDE],      // wt_GLS - weight function for assemble_stress
+       WT_STRESS_GLS_DEPENDENCE_STRUCT *,   // d_wt_GLS - Jacobian terms for weight function
+       dbl ,                                // tt - time integration parameter
+       dbl ));                                // dt - current time step
+
+
+EXTERN int assemble_stress_GLS
+PROTO((dbl ,                    // time_value - current time
+       dbl ,			// tt - time integration parameter 
+       dbl ,			// dt - current time step size               
+       const PG_DATA *));	// pg_data - Petrov-Galerkin data            
+
+
 
 EXTERN int assemble_stress_level_set
 PROTO((dbl ,			/* tt - parm to vary time integration from 
@@ -67,9 +84,11 @@ PROTO((dbl ,			/* tt - parm to vary time integration from
 
 
 EXTERN int assemble_gradient	/* mm_fill_stress.c                          */
-PROTO((dbl ,			/* tt - parm to vary time integration from 
+PROTO((dbl ,                    // time_value - current time
+       dbl ,			/* tt - parm to vary time integration from 
 				 * explicit (tt = 1) to implicit (tt = 0)    */
-       dbl ));			/* dt - current time step size               */
+       dbl ,			/* dt - current time step size               */
+       const PG_DATA *));	// pg_data - Petrov-Galerkin data  
 
 EXTERN int tensor_dot		/* mm_fill_stress.c                          */
 PROTO((dbl [DIM][DIM],		/* t1                                        */

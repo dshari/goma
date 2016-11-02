@@ -468,6 +468,9 @@ int solve_nonlinear_problem(struct Aztec_Linear_Solver_System *ams,
   UMI_LIST_STRUCT *curr_mat_list;
   NODE_INFO_STRUCT *node_ptr;
   int num_mat, imat, mat_index, b; 
+  
+  // Index for EVSS_GLS
+  int evss_gls = 0;
 
 #ifdef DEBUG_MMH
   int inode, i_Var_Desc, i_offset, idof_eqn, idof_var;
@@ -746,9 +749,19 @@ int solve_nonlinear_problem(struct Aztec_Linear_Solver_System *ams,
 		  }
 	  }
 
-
+	  if(vn!=NULL && &vn->evssModel!=NULL)
+	    {
+	      if(vn->evssModel==EVSS_GLS_g || vn->evssModel==EVSS_GLS_l)
+		{
+		  evss_gls = 1;
+		}
+	    }
+	  
+	
       /* get global element size and velocity norm if needed for PSPG or Cont_GLS */
-	  if((PSPG && Num_Var_In_Type[PRESSURE]) || (Cont_GLS && Num_Var_In_Type[VELOCITY1]))
+	  if((PSPG && Num_Var_In_Type[PRESSURE]) 
+	     || (Cont_GLS && Num_Var_In_Type[VELOCITY1])
+	     || (evss_gls && Num_Var_In_Type[POLYMER_STRESS11]))
 	  {
           h_elem_avg = global_h_elem_siz(x, x_old, xdot, resid_vector, exo, dpi);
 		  U_norm     = global_velocity_norm(x, exo, dpi);

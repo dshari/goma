@@ -2512,6 +2512,17 @@ assemble_momentum(dbl time,       /* current time */
   CONT_GLS_DEPENDENCE_STRUCT d_cont_gls_struct;
   CONT_GLS_DEPENDENCE_STRUCT *d_cont_gls = &d_cont_gls_struct;
 
+  //Stress stabilization
+  int VE_GLS = 0;
+  dbl stress_GLS, stress_GLS_a, stress_GLS_b, stress_GLS_c, stress_GLS_d;
+  dbl tau_stress[MAX_MODES];
+  TAU_STRESS_GLS_DEPENDENCE_STRUCT d_tau_stress_struct;
+  TAU_STRESS_GLS_DEPENDENCE_STRUCT *d_tau_stress = &d_tau_stress_struct;
+  dbl VE_residual[DIM][DIM][MAX_MODES];
+  VE_GLS_DEPENDENCE_STRUCT d_VE_residual_struct;
+  VE_GLS_DEPENDENCE_STRUCT *d_VE_residual = &d_VE_residual_struct;
+  
+
   int *n_dof = NULL;
   int dof_map[MDE];
   
@@ -2771,10 +2782,26 @@ assemble_momentum(dbl time,       /* current time */
 
   (void) momentum_source_term(f, df, time);
 
-  //Call continuity stabilization if desired
+  //Call continuity stabilization if desired, Cont_GLS is set in src/mm_input.c
   if(Cont_GLS)
     {
       calc_cont_gls(&cont_gls, d_cont_gls, time, pg_data);
+    }
+  
+  //Call stress stabilization if desired, evssModel is set in src/mm_input_mp.c
+  if(vn!=NULL && &vn->evssModel!=NULL)
+    {
+      if(vn->evssModel==EVSS_GLS_l || vn->evssModel==EVSS_GLS_g)
+	{
+	  VE_GLS = 0;
+
+	  //These terms aren't necessary if we are using G in the constitutive equation
+	}
+    }
+
+  if(VE_GLS)
+    {
+      calc_VE_res_GLS(tau_stress, d_tau_stress, VE_residual, d_VE_residual, tt, dt, pg_data);
     }
 
   /*
@@ -2983,6 +3010,30 @@ assemble_momentum(dbl time,       /* current time */
                   continuity_stabilization *= cont_gls*d_area;
 	        }
 
+	      //Stress residual, this is the contribution from the rate of strain tensor in the constitutive equation
+	      stress_GLS = 0.0;
+	      if(VE_GLS)
+		{
+		  for(p=0; p<VIM; p++)
+		    {
+		      for(q=0; q<VIM; q++)
+			{
+			  for(mode=0; mode<vn->modes; mode++)
+			    {
+			      if(p<=q)
+				{
+				  stress_GLS -= tau_stress[mode]*VE_residual[p][q][mode]*grad_phi_i_e_a[p][q];
+				}
+			      else
+				{
+				  stress_GLS -= tau_stress[mode]*VE_residual[q][p][mode]*grad_phi_i_e_a[p][q];
+				}
+			    }
+			}		      
+		    }
+		  stress_GLS *= d_area;
+		}
+
 	      /*
 	       * Add contributions to this residual (globally into Resid, and 
 	       * locally into an accumulator)
@@ -2990,6 +3041,7 @@ assemble_momentum(dbl time,       /* current time */
 		  
 	      /*lec->R[peqn][ii] += mass + advection + porous + diffusion + source;*/
               R[ii] += mass + advection + porous + diffusion + source + continuity_stabilization;
+	      R[ii] += stress_GLS;
 
 #ifdef DEBUG_MOMENTUM_RES
 	      printf("R_m[%d][%d] += %10f %10f %10f %10f %10f\n",
@@ -3191,9 +3243,32 @@ assemble_momentum(dbl time,       /* current time */
 			  mass *= (1.0 - p_vol_frac);
 			  advection *= (1.0 - p_vol_frac);
 			}
-			  
+		      
+		      stress_GLS = 0.0;
+		      if(VE_GLS)
+			{
+			  for(p=0; p<VIM; p++)
+			    {
+			      for(q=0; q<VIM; q++)
+				{
+				  for(mode=0; mode<vn->modes; mode++)
+				    {
+				      if(p<=q)
+					{
+					  stress_GLS -= tau_stress[mode]*d_VE_residual->T[p][q][mode][j]*grad_phi_i_e_a[p][q];
+					}
+				      else
+					{
+					  stress_GLS -= tau_stress[mode]*d_VE_residual->T[q][p][mode][j]*grad_phi_i_e_a[p][q];
+					}
+				    }
+				}
+			    }
+			  stress_GLS *= d_area;
+			}
+		      
 		      /*lec->J[peqn][pvar][ii][j] += mass + advection + porous + diffusion + source;*/
-		      J[j] += mass + advection + porous + diffusion + source; 
+		      J[j] += mass + advection + porous + diffusion + source + stress_GLS; 
 #ifdef DEBUG_HKM
 		      checkFinite(J[j]);
 #endif
@@ -3561,9 +3636,42 @@ assemble_momentum(dbl time,       /* current time */
 				}
 			      continuity_stabilization *= d_cont_gls->v[b][j]*d_area;
 			    }
+			  
+			  stress_GLS = 0.0;
+			  if(VE_GLS)
+			    {
+			      for(p=0; p<VIM; p++)
+				{
+				  for(q=0; q<VIM; q++)
+				    {
+				      for(mode=0; mode<vn->modes; mode++)
+					{
+					  stress_GLS_a = 0.0;
+					  stress_GLS_b = 0.0;
 
+					  if(p<=q)
+					    {
+					      stress_GLS_a -= d_tau_stress->v[mode][b][j]*VE_residual[p][q][mode];
+					      stress_GLS_b -= tau_stress[mode]*d_VE_residual->v[p][q][mode][b][j];
+					    }
+					  else
+					    {
+					      stress_GLS_a -= d_tau_stress->v[mode][b][j]*VE_residual[q][p][mode];
+					      stress_GLS_b -= tau_stress[mode]*d_VE_residual->v[q][p][mode][b][j];
+					    }
 
+					  stress_GLS_a *= grad_phi_i_e_a[p][q];
+					  stress_GLS_b *= grad_phi_i_e_a[p][q];
+					  
+					  stress_GLS += stress_GLS_a + stress_GLS_b;
+					}
+				    }
+				}
+			      stress_GLS *= d_area;
+			    }
+			  
 			  J[j] +=  mass + advection + porous + diffusion + source + continuity_stabilization;
+			  J[j] += stress_GLS;
 
 			  /*lec->J[peqn][pvar][ii][j] +=  mass + advection + porous + diffusion + source; */
 			}
@@ -3917,10 +4025,33 @@ assemble_momentum(dbl time,       /* current time */
 			      source    = phi_i * df->C[a][w][j] * det_J * h3 *wt;
 			      source   *= pd->etm[eqn][(LOG2_SOURCE)];
 			    }
-		  
-
+			  
+			  stress_GLS = 0.0;
+			  if(VE_GLS)
+			    {
+			      for(p=0; p<VIM; p++)
+				{
+				  for(q=0; q<VIM; q++)
+				    {
+				      for(mode=0; mode<vn->modes; mode++)
+					{
+					  if(p<=q)
+					    {
+					      stress_GLS -= tau_stress[mode]*d_VE_residual->C[p][q][mode][w][j]*grad_phi_i_e_a[p][q];
+					    }
+					  else
+					    {
+					      stress_GLS -= tau_stress[mode]*d_VE_residual->C[q][p][mode][w][j]*grad_phi_i_e_a[p][q];
+					    }
+					}
+				    }
+				}
+			      stress_GLS *= d_area;
+			    }
+			  
+			  
 			  lec->J[peqn][MAX_PROB_VAR + w][ii][j] +=
-			    mass + advection + porous + diffusion + source;
+			    mass + advection + porous + diffusion + source + stress_GLS;
 			}
 		    }
 		}
@@ -3980,7 +4111,30 @@ assemble_momentum(dbl time,       /* current time */
 			diffusion *= d_area;
 			diffusion *= diffusion_etm;
 		      }
-				   
+		    
+		    stress_GLS = 0.0;
+		    if(VE_GLS)
+		      {
+			for(p=0; p<VIM; p++)
+			  {
+			    for(q=0; q<VIM; q++)
+			      {
+				for(mode=0; mode<vn->modes; mode++)
+				  {
+				    if(p<=q)
+				      {
+					stress_GLS -= tau_stress[mode]*d_VE_residual->P[p][q][mode][j]*grad_phi_i_e_a[p][q];
+				      }
+				    else
+				      {
+					stress_GLS -= tau_stress[mode]*d_VE_residual->P[q][p][mode][j]*grad_phi_i_e_a[p][q];
+				      }
+				  }
+			      }
+			  }
+			stress_GLS *= d_area;
+		      }
+		    
 				   
 #ifdef DEBUG_MOMENTUM_JAC
 		    if(ei->ielem == 0)
@@ -3990,7 +4144,7 @@ assemble_momentum(dbl time,       /* current time */
 #endif /* DEBUG_MOMENTUM_JAC */
 				   
 		    /*lec->J[peqn][pvar][ii][j] += diffusion ;  */
-		    J[j] += diffusion;
+		    J[j] += diffusion + stress_GLS;
 		  }
 	      }
 
@@ -4031,9 +4185,32 @@ assemble_momentum(dbl time,       /* current time */
 					diffusion *= det_J * wt * h3;
 					diffusion *= pd->etm[eqn][(LOG2_DIFFUSION)];
 				      }
+
+				    stress_GLS = 0.0;
+				    if(VE_GLS)
+				      {
+					for(p=0; p<VIM; p++)
+					  {
+					    for(q=0; q<VIM; q++)
+					      {
+						stress_GLS_a = 0.0;
+						if(p<=q)
+						  {
+						    stress_GLS_a -= tau_stress[mode]*d_VE_residual->S[p][q][mode][b][c][j];
+						  }
+						else
+						  {
+						    stress_GLS_a -= tau_stress[mode]*d_VE_residual->S[q][p][mode][b][c][j];
+						  }
+						stress_GLS_a *= grad_phi_i_e_a[p][q];
+						stress_GLS += stress_GLS_a;
+					      }
+					  }
+					stress_GLS *= d_area;
+				      }
 								  
 				    lec->J[peqn][pvar][ii][j] +=
-				      diffusion;
+				      diffusion + stress_GLS;
 				  }
 			      }
 			  }
@@ -4044,8 +4221,8 @@ assemble_momentum(dbl time,       /* current time */
 	      /*
 	       * J_m_G
 	       */
-		  
-	      if ( pdv[POLYMER_STRESS11] && (vn->evssModel == EVSS_F) )
+	      
+	      if ( pdv[POLYMER_STRESS11] && (vn->evssModel == EVSS_F || VE_GLS) )
 		{
 		  for ( b=0; b<VIM; b++)
 		    {
@@ -4078,8 +4255,34 @@ assemble_momentum(dbl time,       /* current time */
 				      diffusion *= det_J * wt *h3;
 				      diffusion *= pd->etm[eqn][(LOG2_DIFFUSION)];
 				    }
-							  
-				  lec->J[peqn][pvar][ii][j] +=diffusion;
+				  
+				  stress_GLS = 0.0;
+				  if(VE_GLS)
+				    {
+				      for(p=0; p<VIM; p++)
+					{
+					  for(q=0; q<VIM; q++)
+					    {
+					      for(mode=0; mode<vn->modes; mode++)
+						{
+						  stress_GLS_a = 0.0;
+						  if(p<=q)
+						    {
+						      stress_GLS_a -= tau_stress[mode]*d_VE_residual->g[p][q][mode][b][c][j];
+						    }
+						  else
+						    {
+						      stress_GLS_a -= tau_stress[mode]*d_VE_residual->g[q][p][mode][b][c][j];
+						    }
+						  stress_GLS_a *= grad_phi_i_e_a[p][q];
+						  stress_GLS += stress_GLS_a;
+						}
+					    }
+					}
+				      stress_GLS *= d_area;
+				    }
+
+				  lec->J[peqn][pvar][ii][j] += diffusion + stress_GLS;
 				}
 			    }
 			}
@@ -4355,15 +4558,55 @@ assemble_momentum(dbl time,       /* current time */
 			      {
 				for(p=0; p<VIM; p++)
 				  {
-				    continuity_stabilization += d_grad_phi_i_e_a_dmesh[p][p][b][j] * cont_gls*d_area;
-				    continuity_stabilization += grad_phi_i_e_a[p][p] * d_cont_gls->X[b][j]*d_area;
+				    continuity_stabilization += d_grad_phi_i_e_a_dmesh[p][p][b][j] *cont_gls *d_area;
+				    continuity_stabilization += grad_phi_i_e_a[p][p]*d_cont_gls->X[b][j] *d_area;
 				    continuity_stabilization += grad_phi_i_e_a[p][p]*cont_gls *
-				                                (d_det_J_dmesh_bj *h3 + det_J *dh3dmesh_bj)*wt;
+				      (d_det_J_dmesh_bj*h3 + det_J*dh3dmesh_bj) * wt;
 				  }
 				
 			      }
 
-			    J[j] += mass + advection + porous + diffusion + source + continuity_stabilization;
+			    stress_GLS = 0.0;
+			    if(VE_GLS)
+			      {
+				for(p=0; p<VIM; p++)
+				  {
+				    for(q=0; q<VIM; q++)
+				      {
+					for(mode=0; mode<vn->modes; mode++)
+					  {
+					    stress_GLS_a = 0.0;
+					    stress_GLS_b = 0.0;
+					    stress_GLS_c = 0.0;
+					    stress_GLS_d = 0.0;
+
+					    if(p<=q)
+					      {
+						stress_GLS_a -= d_tau_stress->X[mode][b][j]*VE_residual[p][q][mode];
+						stress_GLS_b -= tau_stress[mode]*d_VE_residual->X[p][q][mode][b][j];
+						stress_GLS_c -= tau_stress[mode]*VE_residual[p][q][mode];
+						stress_GLS_d -= tau_stress[mode]*VE_residual[p][q][mode];
+					      }
+					    else
+					      {
+						stress_GLS_a -= d_tau_stress->X[mode][b][j]*VE_residual[q][p][mode];
+						stress_GLS_b -= tau_stress[mode]*d_VE_residual->X[q][p][mode][b][j];
+						stress_GLS_c -= tau_stress[mode]*VE_residual[q][p][mode];
+						stress_GLS_d -= tau_stress[mode]*VE_residual[q][p][mode];
+					      }
+
+					    stress_GLS_a *= grad_phi_i_e_a[p][q]*d_area;
+					    stress_GLS_b *= grad_phi_i_e_a[p][q]*d_area;
+					    stress_GLS_c *= d_grad_phi_i_e_a_dmesh[p][q][b][j]*d_area;
+					    stress_GLS_d *= grad_phi_i_e_a[p][q]*wt*(d_det_J_dmesh_bj*h3 + det_J*dh3dmesh_bj);
+
+					    stress_GLS += stress_GLS_a + stress_GLS_b + stress_GLS_c + stress_GLS_d;
+					  }
+				      }
+				  }
+			      }
+
+			    J[j] += mass + advection + porous + diffusion + source + continuity_stabilization + stress_GLS;
 			  }
 
 			/* Special Case for shell lubrication velocities with bounding continuum.  Note j-loop is over bulk element */			
@@ -5307,6 +5550,7 @@ assemble_continuity(dbl time_value,   /* current time */
 	    {
 	      for ( p=0; p<VIM; p++)
 		{
+		  //pvar = upd->vp[var];
 		  for ( q=0; q<VIM; q++)
 		    {
 		      var = v_g[p][q];
@@ -25845,7 +26089,7 @@ assemble_momentum_path_dependence(dbl time,       /* currentt time step */
 				  const PG_DATA *pg_data)
 {
   int dim, wim;
-  int i, j, a, p;
+  int i, j, a, p, q, mode;
   int ledof, eqn, var, ii, peqn, pvar;
   int status;
   struct Basis_Functions *bfm;
@@ -25940,6 +26184,11 @@ assemble_momentum_path_dependence(dbl time,       /* currentt time step */
 
   /*Continuity stabilization*/
   dbl cont_gls, continuity_stabilization;
+
+  //Stress stabilization
+  dbl stress_GLS;
+  dbl tau_stress[MAX_MODES];
+  dbl VE_residual[DIM][DIM][MAX_MODES];
 
 
   status = 0;
@@ -26118,6 +26367,14 @@ assemble_momentum_path_dependence(dbl time,       /* currentt time step */
     {
       calc_cont_gls(&cont_gls, NULL, time, pg_data);
     }
+  
+  //Call stress stabilization if desired
+  //if(VE_GLS)
+  if(PSPG)
+    {
+      calc_VE_res_GLS(tau_stress, NULL, VE_residual, NULL, tt, dt, pg_data);
+    }
+
 
   if ( af->Assemble_Jacobian )
   {
@@ -26285,10 +26542,35 @@ assemble_momentum_path_dependence(dbl time,       /* currentt time step */
 				      }
 				      continuity_stabilization *= cont_gls*d_area;
 				    }
-				  
+
+				  //Stress residual
+				  stress_GLS = 0.0;
+				  //if(VE_GLS)
+				  if(PSPG)
+				    {
+				      for(p=0; p<VIM; p++)
+					{
+					  for(q=0; q<VIM; q++)
+					    {
+					      for(mode=0; mode<vn->modes; mode++)
+						{
+						  if(p<=q)
+						    {
+						      stress_GLS -= tau_stress[mode]*VE_residual[p][q][mode]*grad_phi_i_e_a[p][q];
+						    }
+						  else
+						    {
+						      stress_GLS -= tau_stress[mode]*VE_residual[q][p][mode]*grad_phi_i_e_a[p][q];
+						    }
+						}
+					    }		      
+					}
+				      stress_GLS *= d_area;
+				    }
+	      
 				  
 				  momentum_residual =
-					  mass + advection + porous + diffusion + source + continuity_stabilization;
+					  mass + advection + porous + diffusion + source + continuity_stabilization + stress_GLS;
 				  
 				  var = FILL;
 				  pvar = upd->vp[var];
@@ -27152,7 +27434,8 @@ fluid_stress( double Pi[DIM][DIM],
       particle_stress(tau_p, d_tau_p_dv, d_tau_p_dvd,d_tau_p_dy,d_tau_p_dmesh,d_tau_p_dp, w0);
     }
 
-  if ( pd->v[POLYMER_STRESS11] && (vn->evssModel == EVSS_F) )
+  if ( pd->v[POLYMER_STRESS11] && 
+       (vn->evssModel==EVSS_F || vn->evssModel==EVSS_GLS_g || vn->evssModel==EVSS_GLS_l) )
     {
       evss_f = 1.;
     }
@@ -28881,6 +29164,33 @@ calc_pspg( dbl pspg[DIM],
 	{
 	  tau_pspg = PS_scaling * h_elem / (2.0 * rho * U_norm);
 	}
+    }
+  else if(pspg_local &&(EVSS_GLS_g||EVSS_GLS_l))
+    {
+      hh_siz = 0.0;
+      for ( p=0; p<dim; p++)
+	{
+	  hh_siz += hsquared[p];
+	}
+      
+      tau_pspg = hh_siz/ 4.0;
+
+      // tau_pspg derivatives wrt mesh from hh_siz
+      if(d_pspg != NULL && pd->v[MESH_DISPLACEMENT1])
+	{
+	  for(b=0; b<dim; b++)
+	    {
+	      var = MESH_DISPLACEMENT1+b;
+	      if(pd->v[var])
+		{
+		  for(j=0; j<ei->dof[var]; j++)
+		    {
+		      d_tau_pspg_dX[b][j] = pg_data->hhv[b][b]*pg_data->dhv_dxnode[b][j]/4.0;
+		    }
+		}
+	    }
+	}
+      
     }
   else if (pspg_local)
     {
